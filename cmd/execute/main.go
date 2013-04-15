@@ -17,7 +17,8 @@ func monitor(state, msg string) {}
 
 // Avoid thundering herd problem on remote services used by this command. Spectrum will be 0, if this is not an issue.
 func SpreadWait(spectrum time.Duration) {
-	// FIXME(nightlyone): Seed random generator by host + time specific value
+	// Seed random generator with current process ID
+	rand.Seed(int64(os.Getpid()))
 	time.Sleep(time.Duration(rand.Int63n(int64(spectrum))))
 }
 
