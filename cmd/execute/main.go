@@ -3,20 +3,17 @@ package main
 import (
 	"flag"
 	"fmt"
+	"github.com/nightlyone/lockfile"
 	"log"
 	"math/rand"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"time"
 )
 
 // FIXME(nightlyone) Hook up passive monitoring solution here
 func monitor(state, msg string) {}
-
-// Ensures that only one of these command runs concurrently on this machine.
-// Also cleans up stale locks of dead instances.
-// FIXME(nightlyone) add actual locking here.
-func TryLock(command string) bool { return true }
 
 // Avoid thundering herd problem on remote services used by this command. Spectrum will be 0, if this is not an issue.
 func SpreadWait(spectrum time.Duration) {
@@ -93,11 +90,20 @@ func main() {
 
 	SpreadWait(spectrum)
 
-	if !TryLock(command) {
+	// Ensures that only one of these command runs concurrently on this machine.
+	// Also cleans up stale locks of dead instances.
+	base := filepath.Base(command)
+	os.Mkdir("/var/lock/"+base, 0600)
+	lock, _ := lockfile.New(filepath.Join("/var/lock/", base, base+".lck"))
+	if err := lock.TryLock(); err != nil {
+		if err != lockfile.ErrBusy {
+			log.Printf("ERROR: locking %s: reason: %v\n", lock, err)
+		}
 		timeout.Stop()
 		Busy()
 		return
 	}
+	defer lock.Unlock()
 
 	// FIXME(nightlyone) capture at least cmd.Stderr, and optionally cmd.Stdout
 	cmd = exec.Command(command, flag.Args()[1:]...)
