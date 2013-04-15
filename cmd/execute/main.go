@@ -61,6 +61,11 @@ var spectrum time.Duration
 func main() {
 	var cmd *exec.Cmd
 
+	// FIXME(mlafeldt) add command-line options for
+	//                 - execution interval (optional)
+	//                 - monitoring command (optional)
+	//                 - kill or wait on busy state (optional)
+	//                 - help
 	log.SetFlags(0)
 	flag.Parse()
 	if flag.NArg() < 1 {
