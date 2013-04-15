@@ -17,7 +17,8 @@ func monitor(state, msg string) {}
 
 // Avoid thundering herd problem on remote services used by this command. Spectrum will be 0, if this is not an issue.
 func SpreadWait(spectrum time.Duration) {
-	// FIXME(nightlyone): Seed random generator by host + time specific value
+	// Seed random generator with current process ID
+	rand.Seed(int64(os.Getpid()))
 	time.Sleep(time.Duration(rand.Int63n(int64(spectrum))))
 }
 
@@ -61,6 +62,11 @@ var spectrum time.Duration
 func main() {
 	var cmd *exec.Cmd
 
+	// FIXME(mlafeldt) add command-line options for
+	//                 - execution interval (optional)
+	//                 - monitoring command (optional)
+	//                 - kill or wait on busy state (optional)
+	//                 - help
 	log.SetFlags(0)
 	flag.Parse()
 	if flag.NArg() < 1 {
@@ -93,8 +99,9 @@ func main() {
 	// Ensures that only one of these command runs concurrently on this machine.
 	// Also cleans up stale locks of dead instances.
 	base := filepath.Base(command)
-	os.Mkdir("/var/lock/"+base, 0600)
-	lock, _ := lockfile.New(filepath.Join("/var/lock/", base, base+".lck"))
+	lock_dir := os.TempDir()
+	os.Mkdir(filepath.Join(lock_dir, base), 0700)
+	lock, _ := lockfile.New(filepath.Join(lock_dir, base, base+".lock"))
 	if err := lock.TryLock(); err != nil {
 		if err != lockfile.ErrBusy {
 			log.Printf("ERROR: locking %s: reason: %v\n", lock, err)
