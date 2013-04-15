@@ -99,8 +99,9 @@ func main() {
 	// Ensures that only one of these command runs concurrently on this machine.
 	// Also cleans up stale locks of dead instances.
 	base := filepath.Base(command)
-	os.Mkdir("/var/lock/"+base, 0600)
-	lock, _ := lockfile.New(filepath.Join("/var/lock/", base, base+".lck"))
+	lock_dir := os.TempDir()
+	os.Mkdir(filepath.Join(lock_dir, base), 0700)
+	lock, _ := lockfile.New(filepath.Join(lock_dir, base, base+".lock"))
 	if err := lock.TryLock(); err != nil {
 		if err != lockfile.ErrBusy {
 			log.Printf("ERROR: locking %s: reason: %v\n", lock, err)
