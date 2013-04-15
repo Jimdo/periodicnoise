@@ -71,14 +71,12 @@ func main() {
 	flag.Parse()
 	if flag.NArg() < 1 {
 		log.Fatal("FATAL: no command to execute")
-		return
 	}
 
 	command := flag.Arg(0)
 
 	if spectrum >= interval {
 		log.Fatal("FATAL: no spectrum >= interval, no time left for actual command execution")
-		return
 	}
 
 	if spectrum == 0*time.Minute {
