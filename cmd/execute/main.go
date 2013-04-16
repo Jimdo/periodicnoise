@@ -35,21 +35,21 @@ func NotAvailable(err error) {
 	monitor("UNKNOWN", s)
 }
 
-// TimedOut states, that the command took to long and reports failure to the monitoring.
+// TimedOut states, that the command took too long and reports failure to the monitoring.
 func TimedOut() {
-	s := "execution took to long"
+	s := "execution took too long"
 	log.Println("FATAL:", s)
 	monitor("CRITICAL", s)
 }
 
 // Busy states, that the command hangs and reports failure to the monitoring. Those tasks should be automatically killed, if it happens often.
 func Busy() {
-	s := "previous invokation of command still runs"
+	s := "previous invocation of command still running"
 	log.Println("FATAL:", s)
 	monitor("CRITICAL", s)
 }
 
-// Failed states, that the command didn't execute sucessfully and reports failure to the monitoring. Also Logs error output.
+// Failed states, that the command didn't execute successfully and reports failure to the monitoring. Also Logs error output.
 func Failed(err error) {
 	s := fmt.Sprintln("Failed to execute: ", err)
 	log.Println("FATAL:", s)
