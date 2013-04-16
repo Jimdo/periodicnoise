@@ -56,19 +56,20 @@ func Failed(err error) {
 	monitor("CRITICAL", s)
 }
 
-var interval time.Duration = 1 * time.Minute
-var spectrum time.Duration
-
 func main() {
 	var cmd *exec.Cmd
+	var interval, spectrum time.Duration
 
 	// FIXME(mlafeldt) add command-line options for
-	//                 - execution interval (optional)
+	//                 - spectrum (optional)
 	//                 - monitoring command (optional)
 	//                 - kill or wait on busy state (optional)
 	//                 - help
 	log.SetFlags(0)
+
+	flag.DurationVar(&interval, "i", 1*time.Minute, "set execution interval for command, e.g. 45s, 2m, 1h30m")
 	flag.Parse()
+
 	if flag.NArg() < 1 {
 		log.Fatal("FATAL: no command to execute")
 		return
