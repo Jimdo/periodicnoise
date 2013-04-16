@@ -64,7 +64,7 @@ func Failed(err error) {
 
 func main() {
 	var cmd *exec.Cmd
-	var interval, spectrum time.Duration
+	var timeout, spectrum time.Duration
 
 	// FIXME(mlafeldt) add command-line options for
 	//                 - spectrum (optional)
@@ -73,7 +73,7 @@ func main() {
 	//                 - help
 	log.SetFlags(0)
 
-	flag.DurationVar(&interval, "i", 1*time.Minute, "set execution interval for command, e.g. 45s, 2m, 1h30m")
+	flag.DurationVar(&timeout, "t", 1*time.Minute, "set execution timeout for command, e.g. 45s, 2m, 1h30m")
 	flag.Parse()
 
 	if flag.NArg() < 1 {
@@ -83,17 +83,17 @@ func main() {
 
 	command := flag.Arg(0)
 
-	if spectrum >= interval {
+	if spectrum >= timeout {
 		log.Fatal("FATAL: no spectrum >= interval, no time left for actual command execution")
 		return
 	}
 
 	if spectrum == 0*time.Minute {
-		spectrum = interval / 10
+		spectrum = timeout / 10
 	}
 
 	// FIXME(nightlyone) try two intervals instead of one?
-	timeout := time.AfterFunc(interval, func() {
+	timer := time.AfterFunc(timeout, func() {
 		TimedOut()
 		if cmd != nil && cmd.Process != nil {
 			cmd.Process.Kill()
@@ -113,7 +113,7 @@ func main() {
 		if err != lockfile.ErrBusy {
 			log.Printf("ERROR: locking %s: reason: %v\n", lock, err)
 		}
-		timeout.Stop()
+		timer.Stop()
 		Busy()
 		return
 	}
@@ -124,16 +124,16 @@ func main() {
 	cmd = exec.Command(command, flag.Args()[1:]...)
 
 	if err := cmd.Start(); err != nil {
-		timeout.Stop()
+		timer.Stop()
 		NotAvailable(err)
 		return
 	}
 
 	if err := cmd.Wait(); err != nil {
-		timeout.Stop()
+		timer.Stop()
 		Failed(err)
 	} else {
-		timeout.Stop()
+		timer.Stop()
 		Ok()
 	}
 }
