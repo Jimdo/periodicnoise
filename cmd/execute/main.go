@@ -12,9 +12,6 @@ import (
 	"time"
 )
 
-// FIXME(nightlyone) Hook up passive monitoring solution here
-func monitor(state, msg string) {}
-
 // Avoid thundering herd problem on remote services used by this command.
 // Interval will be 0, if this is not an issue.
 func SpreadWait(interval time.Duration) {
@@ -110,6 +107,7 @@ func main() {
 	// Ensures that only one of these command runs concurrently on this
 	// machine.  Also cleans up stale locks of dead instances.
 	base := filepath.Base(command)
+	monitoringEvent = base
 	lock_dir := os.TempDir()
 	os.Mkdir(filepath.Join(lock_dir, base), 0700)
 	lock, _ := lockfile.New(filepath.Join(lock_dir, base, base+".lock"))
