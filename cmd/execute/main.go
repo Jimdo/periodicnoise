@@ -16,11 +16,14 @@ import (
 func monitor(state, msg string) {}
 
 // Avoid thundering herd problem on remote services used by this command.
-// Spectrum will be 0, if this is not an issue.
-func SpreadWait(spectrum time.Duration) {
-	// Seed random generator with current process ID
-	rand.Seed(int64(os.Getpid()))
-	time.Sleep(time.Duration(rand.Int63n(int64(spectrum))))
+// Interval will be 0, if this is not an issue.
+func SpreadWait(interval time.Duration) {
+	if interval > 0 {
+		// Seed random generator with current process ID
+		rand.Seed(int64(os.Getpid()))
+		// Sleep for random amount of time within interval
+		time.Sleep(time.Duration(rand.Int63n(int64(interval))))
+	}
 }
 
 // Ok states that execution went well. Logs debug output and reports ok to
@@ -64,16 +67,17 @@ func Failed(err error) {
 
 func main() {
 	var cmd *exec.Cmd
-	var timeout, spectrum time.Duration
+	var interval, timeout time.Duration
 
 	// FIXME(mlafeldt) add command-line options for
-	//                 - spectrum (optional)
 	//                 - monitoring command (optional)
 	//                 - kill or wait on busy state (optional)
-	//                 - help
 	log.SetFlags(0)
 
-	flag.DurationVar(&timeout, "t", 1*time.Minute, "set execution timeout for command, e.g. 45s, 2m, 1h30m")
+	flag.DurationVar(&interval, "i", -1,
+		"set execution interval for command, e.g. 45s, 2m, 1h30m, default: 1/10 of timeout")
+	flag.DurationVar(&timeout, "t", 1*time.Minute,
+		"set execution timeout for command, e.g. 45s, 2m, 1h30m, default: 1m")
 	flag.Parse()
 
 	if flag.NArg() < 1 {
@@ -83,13 +87,13 @@ func main() {
 
 	command := flag.Arg(0)
 
-	if spectrum >= timeout {
-		log.Fatal("FATAL: no spectrum >= interval, no time left for actual command execution")
+	if interval >= timeout {
+		log.Fatal("FATAL: interval >= timeout, no time left for actual command execution")
 		return
 	}
 
-	if spectrum == 0*time.Minute {
-		spectrum = timeout / 10
+	if interval == -1 {
+		interval = timeout / 10
 	}
 
 	// FIXME(nightlyone) try two intervals instead of one?
@@ -101,7 +105,7 @@ func main() {
 		os.Exit(0)
 	})
 
-	SpreadWait(spectrum)
+	SpreadWait(interval)
 
 	// Ensures that only one of these command runs concurrently on this
 	// machine.  Also cleans up stale locks of dead instances.
