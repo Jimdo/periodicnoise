@@ -6,7 +6,7 @@ import (
 	"strings"
 )
 
-var monitoringCalls map[monitoringResult]string
+var monitoringCalls = map[monitoringResult]string{}
 var monitoringEvent string
 
 type monitoringResult string
