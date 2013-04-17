@@ -19,6 +19,8 @@ const (
 	monitorUnknown  monitoringResult = "UNKNOWN"
 )
 
+func (m monitoringResult) String() string { return string(m) }
+
 // Hook for passive monitoring solution
 func monitor(state monitoringResult, message string) {
 	// sanity check arguments
@@ -35,7 +37,7 @@ func monitor(state monitoringResult, message string) {
 	}
 
 	call = strings.Replace(call, "%(event)", monitoringEvent, -1)
-	call = strings.Replace(call, "%(state)", string(state), -1)
+	call = strings.Replace(call, "%(state)", state.String(), -1)
 	call = strings.Replace(call, "%(message)", message, -1)
 	// do argument interpolation
 	cmd := commander.Command("/bin/sh", "-c", call)
