@@ -8,10 +8,6 @@ import (
 
 var config *conf.ConfigFile
 
-// FIXME(mlafeldt) this should probably go to monitor.go
-var monitoringResults = []monitoringResult{monitorOk, monitorCritical,
-	monitorWarning, monitorDebug, monitorUnknown}
-
 func init() {
 	// Use config test fixture
 	GlobalConfig = "testdata/config.ini"

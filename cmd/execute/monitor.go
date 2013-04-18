@@ -19,6 +19,9 @@ const (
 	monitorUnknown  monitoringResult = "UNKNOWN"
 )
 
+var monitoringResults = []monitoringResult{monitorOk, monitorCritical,
+	monitorWarning, monitorDebug, monitorUnknown}
+
 func (m monitoringResult) String() string { return string(m) }
 
 // Hook for passive monitoring solution

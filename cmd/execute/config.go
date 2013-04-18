@@ -41,15 +41,14 @@ func loadConfig() *conf.ConfigFile {
 // Load monitoring commands from config
 func loadMonitoringCommands() {
 	config := loadConfig()
-	states := []monitoringResult{monitorOk, monitorCritical, monitorWarning, monitorDebug, monitorUnknown}
 
-	for _, state := range states {
-		if cmd, err := config.GetString("monitoring", state.String()); err != nil {
+	for _, result := range monitoringResults {
+		if cmd, err := config.GetString("monitoring", result.String()); err != nil {
 			if _, ok := err.(conf.GetError); !ok {
 				log.Fatalln("ERROR: reading monitoring commands: ", err)
 			}
 		} else {
-			monitoringCalls[state] = cmd
+			monitoringCalls[result] = cmd
 		}
 	}
 }
