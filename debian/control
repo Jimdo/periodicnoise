@@ -2,6 +2,7 @@ Source: periodicnoise
 Section: admin
 Priority: extra
 Maintainer: Ingo Oeser <nightlyone@googlemail.com>
+Uploaders: Mathias Lafeldt <mathias.lafeldt@gmail.com>
 Build-Depends: debhelper (>= 8.0.0), golang-go, git-core, mercurial, rsync
 Standards-Version: 3.9.2
 Homepage: https://github.com/nightlyone/periodicnoise
