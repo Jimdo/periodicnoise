@@ -40,7 +40,7 @@ To enable passive monitoring, you have to configure a command to be executed for
 each type of monitoring result. Those commands can be either configured in the
 global configuration file `/etc/periodicnoise/config.ini` or in the
 user-specific configuration file `$HOME/.config/periodicnoise/config.ini` (the
-latter overwriting the former).
+user-specific settings overwrite the global settings).
 
 Here is a sample configuration:
 
