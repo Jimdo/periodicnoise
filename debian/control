@@ -1,0 +1,13 @@
+Source: periodicnoise
+Section: admin
+Priority: extra
+Maintainer: Ingo Oeser <nightlyone@googlemail.com>
+Build-Depends: debhelper (>= 8.0.0), golang-go, git-core, mercurial, rsync
+Standards-Version: 3.9.2
+Homepage: https://github.com/nightlyone/periodicnoise
+Vcs-Git: git://github.com/nightlyone/periodicnoise.git
+
+Package: periodicnoise
+Architecture: amd64
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: Powerful wrapper for periodic tasks like cron jobs
