@@ -9,28 +9,33 @@ import (
 var monitoringCalls = map[monitoringResult]string{}
 var monitoringEvent string
 
-type monitoringResult string
+type monitoringResult int
 
 const (
-	monitorOk       monitoringResult = "OK"
-	monitorCritical monitoringResult = "CRITICAL"
-	monitorWarning  monitoringResult = "WARNING"
-	monitorDebug    monitoringResult = "DEBUG"
-	monitorUnknown  monitoringResult = "UNKNOWN"
+	monitorOk monitoringResult = iota
+	monitorCritical
+	monitorWarning
+	monitorDebug
+	monitorUnknown
+	monitorLast  = monitorUnknown
+	monitorFirst = monitorOk
 )
 
-var monitoringResults = []monitoringResult{monitorOk, monitorCritical,
-	monitorWarning, monitorDebug, monitorUnknown}
+var monitoringResults = map[monitoringResult]string{
+	monitorOk:       "OK",
+	monitorCritical: "CRITICAL",
+	monitorWarning:  "WARNING",
+	monitorDebug:    "DEBUG",
+	monitorUnknown:  "UNKNOWN",
+}
 
-func (m monitoringResult) String() string { return string(m) }
+func (m monitoringResult) String() string {
+	return monitoringResults[m]
+}
 
 // Hook for passive monitoring solution
 func monitor(state monitoringResult, message string) {
-	// sanity check arguments
-	switch state {
-	case monitorOk, monitorCritical, monitorWarning, monitorDebug, monitorUnknown:
-		// These are valid
-	default:
+	if _, exists := monitoringResults[state]; !exists {
 		panic("unknown monitoring state")
 	}
 
@@ -59,7 +64,7 @@ type Commander interface {
 	Command(name string, args ...string) Executor
 }
 
-var commander = execCommander{}
+var commander Commander = execCommander{}
 
 // default implementations
 type execExecutor struct {
