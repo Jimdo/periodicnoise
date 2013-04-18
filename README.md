@@ -70,15 +70,15 @@ Install [Go 1][3], either [from source][4] or [with a prepackaged binary][5].
 Then run
 
 	go get github.com/nightlyone/periodicnoise
-	go get github.com/nightlyone/periodicnoise/cmd/execute
+	go get github.com/nightlyone/periodicnoise/cmd/pn
 
-safely execute /bin/true
+safely execute /bin/true two times
 
-	$GOPATH/bin/execute /bin/true & $GOPATH/bin/execute /bin/true
+	$GOPATH/bin/pn /bin/true & $GOPATH/bin/pn /bin/true
 
-safely execute /bin/false
+safely execute /bin/false two times
 
-	$GOPATH/bin/execute /bin/false & $GOPATH/bin/execute /bin/false
+	$GOPATH/bin/pn /bin/false & $GOPATH/bin/pn /bin/false
 
 
 [3]: http://golang.org
