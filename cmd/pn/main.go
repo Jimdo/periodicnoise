@@ -27,7 +27,7 @@ func SpreadWait(interval time.Duration) {
 // monitoring.
 func Ok() {
 	log.Println("Ok")
-	monitor("OK", "")
+	monitor(monitorOk, "")
 }
 
 // NotAvailable states that the command could not be started successfully. It
@@ -35,7 +35,7 @@ func Ok() {
 func NotAvailable(err error) {
 	s := fmt.Sprintln("Cannot start command: ", err)
 	log.Println("FATAL:", s)
-	monitor("UNKNOWN", s)
+	monitor(monitorUnknown, s)
 }
 
 // TimedOut states that the command took too long and reports failure to the
@@ -43,7 +43,7 @@ func NotAvailable(err error) {
 func TimedOut() {
 	s := "execution took too long"
 	log.Println("FATAL:", s)
-	monitor("CRITICAL", s)
+	monitor(monitorCritical, s)
 }
 
 // Busy states that the command hangs and reports failure to the monitoring.
@@ -51,7 +51,7 @@ func TimedOut() {
 func Busy() {
 	s := "previous invocation of command still running"
 	log.Println("FATAL:", s)
-	monitor("CRITICAL", s)
+	monitor(monitorCritical, s)
 }
 
 // Failed states that the command didn't execute successfully and reports
@@ -59,7 +59,7 @@ func Busy() {
 func Failed(err error) {
 	s := fmt.Sprintln("Failed to execute: ", err)
 	log.Println("FATAL:", s)
-	monitor("CRITICAL", s)
+	monitor(monitorCritical, s)
 }
 
 func main() {
