@@ -33,6 +33,32 @@ quick usage
 
 TODO
 
+monitoring configuration
+------------------------
+
+To enable passive monitoring, you have to configure a command to be executed for
+each type of monitoring result. Those commands can be either configured in the
+global configuration file `/etc/periodicnoise/config.ini` or in the
+user-specific configuration file `$HOME/.config/periodicnoise/config.ini` (the
+user-specific settings overwrite the global settings).
+
+Here is a sample configuration:
+
+```
+[monitoring]
+OK       = send_ncsa "%(event): [OK] %(message)"
+CRITICAL = send_ncsa "%(event): [CRITICAL] %(message)"
+WARNING  = send_ncsa "%(event): [WARNING] %(message)"
+DEBUG    = send_ncsa "%(event): [DEBUG] %(message)"
+UNKNOWN  = send_ncsa "%(event): [UNKNOWN] %(message)"
+```
+
+Note that following strings will be expanded at runtime:
+
+* `%(event)` - monitoring event (name of the executed command)
+* `%(state)` - monitoring state, e.g. OK or DEBUG
+* `%(message)` - monitoring message
+
 build and install
 =================
 

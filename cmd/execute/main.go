@@ -66,9 +66,8 @@ func main() {
 	var cmd *exec.Cmd
 	var interval, timeout time.Duration
 
-	// FIXME(mlafeldt) add command-line options for
-	//                 - monitoring command (optional)
-	//                 - kill or wait on busy state (optional)
+	// FIXME(mlafeldt) add command-line options for kill or wait on busy
+	// state
 	log.SetFlags(0)
 
 	flag.DurationVar(&interval, "i", -1,
@@ -92,6 +91,8 @@ func main() {
 	if interval == -1 {
 		interval = timeout / 10
 	}
+
+	loadMonitoringCommands()
 
 	// FIXME(nightlyone) try two intervals instead of one?
 	timer := time.AfterFunc(timeout, func() {
