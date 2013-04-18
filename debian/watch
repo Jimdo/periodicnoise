@@ -1,0 +1,8 @@
+# watch control file for uscan
+# See uscan(1) for format
+
+# Compulsory line, this is a version 3 file
+version=3
+
+# github redirector at debian
+http://githubredir.debian.net/github/nightlyone/periodicnoise (.+).tar.gz
