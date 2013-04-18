@@ -18,18 +18,16 @@ func init() {
 	config = loadConfig()
 }
 
-func TestHasMonitoringSection(t *testing.T) {
-	if !config.HasSection("monitoring") {
-		t.Error("monitoring section missing")
-	}
-}
-
 func makeMonitoringCommand(result monitoringResult) string {
 	return fmt.Sprintf("send_ncsa \"%%(event): [%s] %%(message)\"", result)
 }
 
 func TestHasMonitoringCommands(t *testing.T) {
-	options, _ := config.GetOptions("monitoring")
+	options, err := config.GetOptions("monitoring")
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	if len(options) != len(monitoringResults) {
 		t.Errorf("got %d, want %d", len(options), len(monitoringResults))
 		return
