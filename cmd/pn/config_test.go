@@ -1,21 +1,15 @@
 package main
 
 import (
-	"code.google.com/p/goconf/conf"
 	"fmt"
 	"testing"
 )
 
-var config *conf.ConfigFile
-
 func init() {
 	// Use config test fixture
 	GlobalConfig = "testdata/config.ini"
-
 	// Make sure user config does not overwrite test data
 	UserConfig = "."
-
-	config = loadConfig()
 }
 
 func makeMonitoringCommand(result monitoringResult) string {
@@ -23,6 +17,7 @@ func makeMonitoringCommand(result monitoringResult) string {
 }
 
 func TestHasMonitoringCommands(t *testing.T) {
+	config := loadConfig()
 	options, err := config.GetOptions("monitoring")
 	if err != nil {
 		t.Fatal(err)
