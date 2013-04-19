@@ -42,7 +42,7 @@ func loadConfig() *conf.ConfigFile {
 func loadMonitoringCommands() {
 	config := loadConfig()
 
-	for _, result := range monitoringResults {
+	for result := range monitoringResults {
 		if cmd, err := config.GetString("monitoring", result.String()); err != nil {
 			if _, ok := err.(conf.GetError); !ok {
 				log.Fatalln("ERROR: reading monitoring commands: ", err)
