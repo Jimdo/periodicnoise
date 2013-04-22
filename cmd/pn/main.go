@@ -6,6 +6,7 @@ import (
 	"github.com/nightlyone/lockfile"
 	"io"
 	"log"
+	"log/syslog"
 	"math/rand"
 	"os"
 	"os/exec"
@@ -64,6 +65,21 @@ func Failed(err error) {
 	monitor(monitorCritical, s)
 }
 
+var useSyslog bool
+
+// derive logger
+func getLogger() (logger io.Writer, err error) {
+	if useSyslog {
+		logger, err = syslog.New(syslog.LOG_NOTICE, monitoringEvent)
+	} else {
+		logger = os.Stderr
+	}
+	if err != nil {
+		log.SetOutput(logger)
+	}
+	return logger, err
+}
+
 func main() {
 	var cmd *exec.Cmd
 	var interval, timeout time.Duration
@@ -76,6 +92,7 @@ func main() {
 		"set execution interval for command, e.g. 45s, 2m, 1h30m, default: 1/10 of timeout")
 	flag.DurationVar(&timeout, "t", 1*time.Minute,
 		"set execution timeout for command, e.g. 45s, 2m, 1h30m, default: 1m")
+	flag.BoolVar(&useSyslog, "l", false, "log via syslog")
 	flag.Parse()
 
 	if flag.NArg() < 1 {
@@ -85,6 +102,7 @@ func main() {
 
 	command := flag.Arg(0)
 	monitoringEvent = filepath.Base(command)
+	_, err := getLogger()
 
 	if interval >= timeout {
 		log.Fatal("FATAL: interval >= timeout, no time left for actual command execution")
@@ -102,6 +120,7 @@ func main() {
 		TimedOut()
 		if cmd != nil && cmd.Process != nil {
 			cmd.Process.Kill()
+			// FIXME(nightlyone) log the kill
 		}
 		os.Exit(0)
 	})
