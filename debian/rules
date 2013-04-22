@@ -10,7 +10,7 @@
 #export DH_VERBOSE=1
 #export DH_OPTIONS=-v
 
-GO_PACKAGE=github.com/nightlyone/periodicnoise
+GO_PACKAGE=github.com/Jimdo/periodicnoise
 BINARIES=pn
 GO_COMMANDS=$(addprefix $(GO_PACKAGE)/cmd/,$(BINARIES))
 

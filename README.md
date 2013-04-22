@@ -15,8 +15,8 @@ Powerful wrapper for periodic tasks (e.g. controlled by cron), which:
 
 [![Build Status][1]][2]
 
-[1]: https://secure.travis-ci.org/nightlyone/periodicnoise.png
-[2]: http://travis-ci.org/nightlyone/periodicnoise
+[1]: https://secure.travis-ci.org/Jimdo/periodicnoise.png
+[2]: http://travis-ci.org/Jimdo/periodicnoise
 
 
 LICENSE
@@ -25,7 +25,7 @@ BSD
 
 documentation
 -------------
-[package documentation at go.pkgdoc.org](http://go.pkgdoc.org/github.com/nightlyone/periodicnoise)
+[package documentation at go.pkgdoc.org](http://go.pkgdoc.org/github.com/Jimdo/periodicnoise)
 
 
 quick usage
@@ -69,8 +69,8 @@ Install [Go 1][3], either [from source][4] or [with a prepackaged binary][5].
 
 Then run
 
-	go get github.com/nightlyone/periodicnoise
-	go get github.com/nightlyone/periodicnoise/cmd/pn
+	go get github.com/Jimdo/periodicnoise
+	go get github.com/Jimdo/periodicnoise/cmd/pn
 
 safely execute /bin/true two times
 

@@ -1,12 +1,12 @@
 Source: periodicnoise
 Section: admin
 Priority: extra
-Maintainer: Ingo Oeser <nightlyone@googlemail.com>
-Uploaders: Mathias Lafeldt <mathias.lafeldt@gmail.com>
+Maintainer: Ingo Oeser <nightlyone@googlemail.com>, Ingo Oeser <ingo@jimdo.com>
+Uploaders: Mathias Lafeldt <mathias.lafeldt@gmail.com>, Mathias Lafeldt <mlafeldt@jimdo.com>
 Build-Depends: debhelper (>= 8.0.0), golang-go, git-core, mercurial, rsync, ca-certificates
 Standards-Version: 3.9.2
-Homepage: https://github.com/nightlyone/periodicnoise
-Vcs-Git: git://github.com/nightlyone/periodicnoise.git
+Homepage: https://github.com/Jimdo/periodicnoise
+Vcs-Git: git://github.com/Jimdo/periodicnoise.git
 
 Package: periodicnoise
 Architecture: amd64

@@ -1,13 +1,13 @@
 Format: http://dep.debian.net/deps/dep5
 Upstream-Name: periodicnoise
-Source: <https://github.com/nightlyone/periodicnoise>
+Source: <https://github.com/Jimdo/periodicnoise>
 
 Files: *
-Copyright: 2013 Ingo Oeser <nightlyone@googlemail.com>
+Copyright: 2013 Ingo Oeser <nightlyone@googlemail.com>, Ingo Oeser <ingo@jimdo.com>
 License: BSD-3-Clause
 
 Files: debian/*
-Copyright: 2013 Ingo Oeser <nightlyone@googlemail.com>
+Copyright: 2013 Mathias Lafeldt <mlafeldt@jimdo.com>
 License: BSD-3-Clause
 
 License: BSD-3-Clause
