@@ -4,11 +4,13 @@ import (
 	"flag"
 	"fmt"
 	"github.com/nightlyone/lockfile"
+	"io"
 	"log"
 	"math/rand"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"sync"
 	"time"
 )
 
@@ -122,9 +124,23 @@ func main() {
 	}
 	defer lock.Unlock()
 
-	// FIXME(nightlyone) capture at least cmd.Stderr, and optionally
-	// cmd.Stdout
 	cmd = exec.Command(command, flag.Args()[1:]...)
+	stdout, err := cmd.StdoutPipe()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	wg := sync.WaitGroup{}
+	wg.Add(1)
+
+	go func() {
+		for {
+			if _, err := io.Copy(os.Stdout, stdout); err != nil {
+				break
+			}
+		}
+		wg.Done()
+	}()
 
 	if err := cmd.Start(); err != nil {
 		timer.Stop()
@@ -139,4 +155,6 @@ func main() {
 		timer.Stop()
 		Ok()
 	}
+
+	wg.Wait()
 }
