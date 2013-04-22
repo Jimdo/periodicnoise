@@ -73,10 +73,10 @@ func getLogger() (logger io.Writer, err error) {
 		logger, err = syslog.New(syslog.LOG_NOTICE, monitoringEvent)
 	} else {
 		logger = os.Stderr
+		log.SetPrefix(monitoringEvent + ": ")
 	}
-	if err != nil {
+	if err == nil {
 		log.SetOutput(logger)
-		log.SetPrefix(monitoringEvent)
 	}
 	return logger, err
 }
