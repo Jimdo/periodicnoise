@@ -98,6 +98,7 @@ func main() {
 	var cmd *exec.Cmd
 	var interval, timeout time.Duration
 	var wg sync.WaitGroup
+	var pipeStderr, pipeStdout bool
 
 	// FIXME(mlafeldt) add command-line options for kill or wait on busy
 	// state
@@ -108,6 +109,8 @@ func main() {
 	flag.DurationVar(&timeout, "t", 1*time.Minute,
 		"set execution timeout for command, e.g. 45s, 2m, 1h30m, default: 1m")
 	flag.BoolVar(&useSyslog, "l", false, "log via syslog")
+	flag.BoolVar(&pipeStderr, "e", true, "pipe stderr to log")
+	flag.BoolVar(&pipeStdout, "o", true, "pipe stdout to log")
 	flag.Parse()
 
 	if flag.NArg() < 1 {
@@ -118,6 +121,9 @@ func main() {
 	command := flag.Arg(0)
 	monitoringEvent = filepath.Base(command)
 	logger, err := getLogger()
+	if err != nil {
+		log.Fatal("FATAL: cannot contact syslog")
+	}
 
 	if interval >= timeout {
 		log.Fatal("FATAL: interval >= timeout, no time left for actual command execution")
@@ -158,17 +164,22 @@ func main() {
 	defer lock.Unlock()
 
 	cmd = exec.Command(command, flag.Args()[1:]...)
-	stdout, err := cmd.StdoutPipe()
-	if err != nil {
-		log.Fatal(err)
-	}
-	logStream(stdout, logger, &wg)
 
-	stderr, err := cmd.StderrPipe()
-	if err != nil {
-		log.Fatal(err)
+	if pipeStdout {
+		stdout, err := cmd.StdoutPipe()
+		if err != nil {
+			log.Fatal(err)
+		}
+		logStream(stdout, logger, &wg)
 	}
-	logStream(stderr, logger, &wg)
+
+	if pipeStderr {
+		stderr, err := cmd.StderrPipe()
+		if err != nil {
+			log.Fatal(err)
+		}
+		logStream(stderr, logger, &wg)
+	}
 
 	if err := cmd.Start(); err != nil {
 		timer.Stop()
