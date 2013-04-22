@@ -108,7 +108,7 @@ func main() {
 		"set execution interval for command, e.g. 45s, 2m, 1h30m, default: 1/10 of timeout")
 	flag.DurationVar(&timeout, "t", 1*time.Minute,
 		"set execution timeout for command, e.g. 45s, 2m, 1h30m, default: 1m")
-	flag.BoolVar(&useSyslog, "l", false, "log via syslog")
+	flag.BoolVar(&useSyslog, "s", false, "log via syslog")
 	flag.BoolVar(&pipeStderr, "e", true, "pipe stderr to log")
 	flag.BoolVar(&pipeStdout, "o", true, "pipe stdout to log")
 	flag.Parse()
