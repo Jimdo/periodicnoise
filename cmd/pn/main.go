@@ -84,6 +84,7 @@ func main() {
 	}
 
 	command := flag.Arg(0)
+	monitoringEvent = filepath.Base(command)
 
 	if interval >= timeout {
 		log.Fatal("FATAL: interval >= timeout, no time left for actual command execution")
@@ -109,11 +110,9 @@ func main() {
 
 	// Ensures that only one of these command runs concurrently on this
 	// machine.  Also cleans up stale locks of dead instances.
-	base := filepath.Base(command)
-	monitoringEvent = base
 	lock_dir := os.TempDir()
-	os.Mkdir(filepath.Join(lock_dir, base), 0700)
-	lock, _ := lockfile.New(filepath.Join(lock_dir, base, base+".lock"))
+	os.Mkdir(filepath.Join(lock_dir, monitoringEvent), 0700)
+	lock, _ := lockfile.New(filepath.Join(lock_dir, monitoringEvent, monitoringEvent+".lock"))
 	if err := lock.TryLock(); err != nil {
 		if err != lockfile.ErrBusy {
 			log.Printf("ERROR: locking %s: reason: %v\n", lock, err)
