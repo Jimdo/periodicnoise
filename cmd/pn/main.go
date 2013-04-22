@@ -4,11 +4,14 @@ import (
 	"flag"
 	"fmt"
 	"github.com/nightlyone/lockfile"
+	"io"
 	"log"
+	"log/syslog"
 	"math/rand"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"sync"
 	"time"
 )
 
@@ -62,9 +65,41 @@ func Failed(err error) {
 	monitor(monitorCritical, s)
 }
 
+var useSyslog bool
+
+// derive logger
+func getLogger() (logger io.Writer, err error) {
+	if useSyslog {
+		logger, err = syslog.New(syslog.LOG_NOTICE, monitoringEvent)
+	} else {
+		logger = os.Stderr
+		log.SetPrefix(monitoringEvent + ": ")
+	}
+	if err == nil {
+		log.SetOutput(logger)
+	}
+	return &LineWriter{w: logger}, err
+}
+
+// pipe r to logger in the background
+func logStream(r io.Reader, logger io.Writer, wg *sync.WaitGroup) {
+	wg.Add(1)
+
+	go func() {
+		for {
+			if _, err := io.Copy(logger, r); err != nil {
+				break
+			}
+		}
+		wg.Done()
+	}()
+}
+
 func main() {
 	var cmd *exec.Cmd
 	var interval, timeout time.Duration
+	var wg sync.WaitGroup
+	var pipeStderr, pipeStdout bool
 
 	// FIXME(mlafeldt) add command-line options for kill or wait on busy
 	// state
@@ -74,6 +109,9 @@ func main() {
 		"set execution interval for command, e.g. 45s, 2m, 1h30m, default: 1/10 of timeout")
 	flag.DurationVar(&timeout, "t", 1*time.Minute,
 		"set execution timeout for command, e.g. 45s, 2m, 1h30m, default: 1m")
+	flag.BoolVar(&useSyslog, "s", false, "log via syslog")
+	flag.BoolVar(&pipeStderr, "e", true, "pipe stderr to log")
+	flag.BoolVar(&pipeStdout, "o", true, "pipe stdout to log")
 	flag.Parse()
 
 	if flag.NArg() < 1 {
@@ -82,6 +120,12 @@ func main() {
 	}
 
 	command := flag.Arg(0)
+	monitoringEvent = filepath.Base(command)
+	logger, err := getLogger()
+	if err != nil {
+		log.Fatal("FATAL: cannot contact syslog")
+		return
+	}
 
 	if interval >= timeout {
 		log.Fatal("FATAL: interval >= timeout, no time left for actual command execution")
@@ -99,6 +143,7 @@ func main() {
 		TimedOut()
 		if cmd != nil && cmd.Process != nil {
 			cmd.Process.Kill()
+			// FIXME(nightlyone) log the kill
 		}
 		os.Exit(0)
 	})
@@ -107,11 +152,9 @@ func main() {
 
 	// Ensures that only one of these command runs concurrently on this
 	// machine.  Also cleans up stale locks of dead instances.
-	base := filepath.Base(command)
-	monitoringEvent = base
 	lock_dir := os.TempDir()
-	os.Mkdir(filepath.Join(lock_dir, base), 0700)
-	lock, _ := lockfile.New(filepath.Join(lock_dir, base, base+".lock"))
+	os.Mkdir(filepath.Join(lock_dir, monitoringEvent), 0700)
+	lock, _ := lockfile.New(filepath.Join(lock_dir, monitoringEvent, monitoringEvent+".lock"))
 	if err := lock.TryLock(); err != nil {
 		if err != lockfile.ErrBusy {
 			log.Printf("ERROR: locking %s: reason: %v\n", lock, err)
@@ -122,9 +165,23 @@ func main() {
 	}
 	defer lock.Unlock()
 
-	// FIXME(nightlyone) capture at least cmd.Stderr, and optionally
-	// cmd.Stdout
 	cmd = exec.Command(command, flag.Args()[1:]...)
+
+	if pipeStdout {
+		stdout, err := cmd.StdoutPipe()
+		if err != nil {
+			log.Fatal(err)
+		}
+		logStream(stdout, logger, &wg)
+	}
+
+	if pipeStderr {
+		stderr, err := cmd.StderrPipe()
+		if err != nil {
+			log.Fatal(err)
+		}
+		logStream(stderr, logger, &wg)
+	}
 
 	if err := cmd.Start(); err != nil {
 		timer.Stop()
@@ -139,4 +196,6 @@ func main() {
 		timer.Stop()
 		Ok()
 	}
+
+	wg.Wait()
 }
