@@ -80,9 +80,24 @@ func getLogger() (logger io.Writer, err error) {
 	return logger, err
 }
 
+// pipe r to logger in the background
+func logStream(r io.Reader, logger io.Writer, wg *sync.WaitGroup) {
+	wg.Add(1)
+
+	go func() {
+		for {
+			if _, err := io.Copy(logger, r); err != nil {
+				break
+			}
+		}
+		wg.Done()
+	}()
+}
+
 func main() {
 	var cmd *exec.Cmd
 	var interval, timeout time.Duration
+	var wg sync.WaitGroup
 
 	// FIXME(mlafeldt) add command-line options for kill or wait on busy
 	// state
@@ -102,7 +117,7 @@ func main() {
 
 	command := flag.Arg(0)
 	monitoringEvent = filepath.Base(command)
-	_, err := getLogger()
+	logger, err := getLogger()
 
 	if interval >= timeout {
 		log.Fatal("FATAL: interval >= timeout, no time left for actual command execution")
@@ -147,18 +162,13 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+	logStream(stdout, logger, &wg)
 
-	wg := sync.WaitGroup{}
-	wg.Add(1)
-
-	go func() {
-		for {
-			if _, err := io.Copy(os.Stdout, stdout); err != nil {
-				break
-			}
-		}
-		wg.Done()
-	}()
+	stderr, err := cmd.StderrPipe()
+	if err != nil {
+		log.Fatal(err)
+	}
+	logStream(stderr, logger, &wg)
 
 	if err := cmd.Start(); err != nil {
 		timer.Stop()
