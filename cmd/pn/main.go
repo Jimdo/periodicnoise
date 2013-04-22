@@ -76,6 +76,7 @@ func getLogger() (logger io.Writer, err error) {
 	}
 	if err != nil {
 		log.SetOutput(logger)
+		log.SetPrefix(monitoringEvent)
 	}
 	return logger, err
 }
@@ -123,6 +124,7 @@ func main() {
 	logger, err := getLogger()
 	if err != nil {
 		log.Fatal("FATAL: cannot contact syslog")
+		return
 	}
 
 	if interval >= timeout {
