@@ -78,7 +78,7 @@ func getLogger() (logger io.Writer, err error) {
 	if err == nil {
 		log.SetOutput(logger)
 	}
-	return logger, err
+	return &LineWriter{w: logger}, err
 }
 
 // pipe r to logger in the background
