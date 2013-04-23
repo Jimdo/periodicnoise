@@ -142,6 +142,12 @@ func main() {
 			if err := process.Signal(os.Kill); err != nil {
 				log.Fatal(err)
 			}
+
+			// Remove old lock and create new one
+			lock.Unlock()
+			if err := lock.TryLock(); err != nil {
+				log.Fatal(err)
+			}
 		} else {
 			timer.Stop()
 			Busy()
