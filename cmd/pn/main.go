@@ -123,9 +123,7 @@ func main() {
 
 	// Ensures that only one of these command runs concurrently on this
 	// machine.  Also cleans up stale locks of dead instances.
-	lock_dir := os.TempDir()
-	os.Mkdir(filepath.Join(lock_dir, monitoringEvent), 0700)
-	lock, _ := lockfile.New(filepath.Join(lock_dir, monitoringEvent, monitoringEvent+".lock"))
+	lock := createLock()
 	if err := lock.TryLock(); err != nil {
 		if err != lockfile.ErrBusy {
 			log.Printf("ERROR: locking %s: reason: %v\n", lock, err)
