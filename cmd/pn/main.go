@@ -27,7 +27,7 @@ func SpreadWait(interval time.Duration) {
 // Ok states that execution went well. Logs debug output and reports ok to
 // monitoring.
 func Ok() {
-	log.Println("Ok")
+	log.Println("OK")
 	monitor(monitorOk, "")
 }
 
