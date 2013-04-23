@@ -63,17 +63,12 @@ func Failed(err error) {
 	monitor(monitorCritical, s)
 }
 
-func main() {
-	var cmd *exec.Cmd
-	var interval, timeout time.Duration
-	var wg sync.WaitGroup
-	var pipeStderr, pipeStdout bool
-	var useSyslog bool
+var interval, timeout time.Duration
+var pipeStderr, pipeStdout bool
+var useSyslog bool
+var command string
 
-	// FIXME(mlafeldt) add command-line options for kill or wait on busy
-	// state
-	log.SetFlags(0)
-
+func parseFlags() {
 	flag.DurationVar(&interval, "i", -1,
 		"set execution interval for command, e.g. 45s, 2m, 1h30m, default: 1/10 of timeout")
 	flag.DurationVar(&timeout, "t", 1*time.Minute,
@@ -85,24 +80,31 @@ func main() {
 
 	if flag.NArg() < 1 {
 		log.Fatal("FATAL: no command to execute")
-		return
 	}
 
-	command := flag.Arg(0)
+	command = flag.Arg(0)
+
+	if interval >= timeout {
+		log.Fatal("FATAL: interval >= timeout, no time left for actual command execution")
+	}
+
+	if interval == -1 {
+		interval = timeout / 10
+	}
+}
+
+func main() {
+	var cmd *exec.Cmd
+	var wg sync.WaitGroup
+
+	log.SetFlags(0)
+	parseFlags()
+
 	monitoringEvent = filepath.Base(command)
 	logger, err := getLogger(useSyslog)
 	if err != nil {
 		log.Fatal("FATAL: cannot contact syslog")
 		return
-	}
-
-	if interval >= timeout {
-		log.Fatal("FATAL: interval >= timeout, no time left for actual command execution")
-		return
-	}
-
-	if interval == -1 {
-		interval = timeout / 10
 	}
 
 	loadMonitoringCommands()
