@@ -4,9 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"github.com/nightlyone/lockfile"
-	"io"
 	"log"
-	"log/syslog"
 	"math/rand"
 	"os"
 	"os/exec"
@@ -29,7 +27,7 @@ func SpreadWait(interval time.Duration) {
 // Ok states that execution went well. Logs debug output and reports ok to
 // monitoring.
 func Ok() {
-	log.Println("Ok")
+	log.Println("OK")
 	monitor(monitorOk, "")
 }
 
@@ -65,46 +63,12 @@ func Failed(err error) {
 	monitor(monitorCritical, s)
 }
 
+var interval, timeout time.Duration
+var pipeStderr, pipeStdout bool
 var useSyslog bool
+var command string
 
-// derive logger
-func getLogger() (logger io.Writer, err error) {
-	if useSyslog {
-		logger, err = syslog.New(syslog.LOG_NOTICE, monitoringEvent)
-	} else {
-		logger = os.Stderr
-		log.SetPrefix(monitoringEvent + ": ")
-	}
-	if err == nil {
-		log.SetOutput(logger)
-	}
-	return &LineWriter{w: logger}, err
-}
-
-// pipe r to logger in the background
-func logStream(r io.Reader, logger io.Writer, wg *sync.WaitGroup) {
-	wg.Add(1)
-
-	go func() {
-		for {
-			if _, err := io.Copy(logger, r); err != nil {
-				break
-			}
-		}
-		wg.Done()
-	}()
-}
-
-func main() {
-	var cmd *exec.Cmd
-	var interval, timeout time.Duration
-	var wg sync.WaitGroup
-	var pipeStderr, pipeStdout bool
-
-	// FIXME(mlafeldt) add command-line options for kill or wait on busy
-	// state
-	log.SetFlags(0)
-
+func parseFlags() {
 	flag.DurationVar(&interval, "i", -1,
 		"set execution interval for command, e.g. 45s, 2m, 1h30m, default: 1/10 of timeout")
 	flag.DurationVar(&timeout, "t", 1*time.Minute,
@@ -116,24 +80,31 @@ func main() {
 
 	if flag.NArg() < 1 {
 		log.Fatal("FATAL: no command to execute")
-		return
 	}
 
-	command := flag.Arg(0)
-	monitoringEvent = filepath.Base(command)
-	logger, err := getLogger()
-	if err != nil {
-		log.Fatal("FATAL: cannot contact syslog")
-		return
-	}
+	command = flag.Arg(0)
 
 	if interval >= timeout {
 		log.Fatal("FATAL: interval >= timeout, no time left for actual command execution")
-		return
 	}
 
 	if interval == -1 {
 		interval = timeout / 10
+	}
+}
+
+func main() {
+	var cmd *exec.Cmd
+	var wg sync.WaitGroup
+
+	log.SetFlags(0)
+	parseFlags()
+
+	monitoringEvent = filepath.Base(command)
+	logger, err := getLogger(useSyslog)
+	if err != nil {
+		log.Fatal("FATAL: cannot contact syslog")
+		return
 	}
 
 	loadMonitoringCommands()
