@@ -1,7 +1,9 @@
 package main
 
 import (
+	"fmt"
 	"github.com/nightlyone/lockfile"
+	"io/ioutil"
 	"os"
 	"path/filepath"
 )
@@ -12,9 +14,35 @@ func getLockfileName() string {
 }
 
 // Create a new lock file
-func createLock() lockfile.Lockfile {
+func createLock() (lockfile.Lockfile, error) {
 	filename := getLockfileName()
 	os.Mkdir(filepath.Dir(filename), 0700)
-	lock, _ := lockfile.New(filename)
-	return lock
+	return lockfile.New(filename)
+}
+
+// FIXME(mlafeldt) this should be moved to the lockfile package
+func getLockfilePid() (int, error) {
+	var pid int
+
+	content, err := ioutil.ReadFile(getLockfileName())
+	if err != nil {
+		return -1, err
+	}
+
+	_, err = fmt.Sscanln(string(content), &pid)
+	if err != nil {
+		return -1, err
+	}
+
+	return pid, nil
+}
+
+// FIXME(mlafeldt) this should be moved to the lockfile package
+func getLockfileProcess() (*os.Process, error) {
+	pid, err := getLockfilePid()
+	if err != nil {
+		return nil, err
+	}
+
+	return os.FindProcess(pid)
 }

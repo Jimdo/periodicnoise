@@ -66,6 +66,7 @@ func Failed(err error) {
 var interval, timeout time.Duration
 var pipeStderr, pipeStdout bool
 var useSyslog bool
+var killRunning bool
 var command string
 
 func parseFlags() {
@@ -76,6 +77,7 @@ func parseFlags() {
 	flag.BoolVar(&useSyslog, "s", false, "log via syslog")
 	flag.BoolVar(&pipeStderr, "e", true, "pipe stderr to log")
 	flag.BoolVar(&pipeStdout, "o", true, "pipe stdout to log")
+	flag.BoolVar(&killRunning, "k", false, "kill already running instance of command")
 	flag.Parse()
 
 	if flag.NArg() < 1 {
@@ -123,14 +125,28 @@ func main() {
 
 	// Ensures that only one of these command runs concurrently on this
 	// machine.  Also cleans up stale locks of dead instances.
-	lock := createLock()
+	lock, err := createLock()
+	if err != nil {
+		log.Fatal(err)
+	}
 	if err := lock.TryLock(); err != nil {
 		if err != lockfile.ErrBusy {
 			log.Printf("ERROR: locking %s: reason: %v\n", lock, err)
 		}
-		timer.Stop()
-		Busy()
-		return
+
+		if killRunning {
+			process, err := getLockfileProcess()
+			if err != nil {
+				log.Fatal(err)
+			}
+			if err := process.Signal(os.Kill); err != nil {
+				log.Fatal(err)
+			}
+		} else {
+			timer.Stop()
+			Busy()
+			return
+		}
 	}
 	defer lock.Unlock()
 
