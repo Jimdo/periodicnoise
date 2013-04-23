@@ -4,9 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"github.com/nightlyone/lockfile"
-	"io"
 	"log"
-	"log/syslog"
 	"math/rand"
 	"os"
 	"os/exec"
@@ -65,41 +63,12 @@ func Failed(err error) {
 	monitor(monitorCritical, s)
 }
 
-var useSyslog bool
-
-// derive logger
-func getLogger() (logger io.Writer, err error) {
-	if useSyslog {
-		logger, err = syslog.New(syslog.LOG_NOTICE, monitoringEvent)
-	} else {
-		logger = os.Stderr
-		log.SetPrefix(monitoringEvent + ": ")
-	}
-	if err == nil {
-		log.SetOutput(logger)
-	}
-	return &LineWriter{w: logger}, err
-}
-
-// pipe r to logger in the background
-func logStream(r io.Reader, logger io.Writer, wg *sync.WaitGroup) {
-	wg.Add(1)
-
-	go func() {
-		for {
-			if _, err := io.Copy(logger, r); err != nil {
-				break
-			}
-		}
-		wg.Done()
-	}()
-}
-
 func main() {
 	var cmd *exec.Cmd
 	var interval, timeout time.Duration
 	var wg sync.WaitGroup
 	var pipeStderr, pipeStdout bool
+	var useSyslog bool
 
 	// FIXME(mlafeldt) add command-line options for kill or wait on busy
 	// state
@@ -121,7 +90,7 @@ func main() {
 
 	command := flag.Arg(0)
 	monitoringEvent = filepath.Base(command)
-	logger, err := getLogger()
+	logger, err := getLogger(useSyslog)
 	if err != nil {
 		log.Fatal("FATAL: cannot contact syslog")
 		return
