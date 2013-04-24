@@ -125,6 +125,7 @@ func main() {
 
 	// Ensures that only one of these command runs concurrently on this
 	// machine.  Also cleans up stale locks of dead instances.
+	// FIXME(mlafeldt) add monitoring to locking logic
 	lock, err := createLock()
 	if err != nil {
 		log.Fatal(err)
@@ -139,12 +140,14 @@ func main() {
 			if err != nil {
 				log.Fatal(err)
 			}
-			if err := process.Signal(os.Kill); err != nil {
+			if err := process.Kill(); err != nil {
 				log.Fatal(err)
 			}
 
 			// Remove old lock and create new one
-			lock.Unlock()
+			if err := lock.Unlock(); err != nil {
+				log.Fatal(err)
+			}
 			if err := lock.TryLock(); err != nil {
 				log.Fatal(err)
 			}
