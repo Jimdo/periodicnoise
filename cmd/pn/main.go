@@ -136,7 +136,7 @@ func main() {
 		}
 
 		if killRunning {
-			process, err := getLockfileProcess()
+			process, err := lock.GetOwner()
 			if err != nil {
 				log.Fatal(err)
 			}
