@@ -36,10 +36,13 @@ func createLock(killRunning bool) (lockfile.Lockfile, error) {
 			if err := process.Kill(); err != nil {
 				return zero, err
 			}
-			// Remove old lock and create new one
+			// FIXME(mlafeldt) Remove old lock. Not really safe as
+			// the process might not be killed yet. lockfile.Unlock()
+			// should check if it actually holds the lock.
 			if err := lock.Unlock(); err != nil {
 				return zero, err
 			}
+			// Create new lock
 			if err := lock.TryLock(); err != nil {
 				return zero, err
 			}
