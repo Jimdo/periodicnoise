@@ -3,7 +3,6 @@ package main
 import (
 	"flag"
 	"fmt"
-	"github.com/nightlyone/lockfile"
 	"log"
 	"math/rand"
 	"os"
@@ -63,9 +62,17 @@ func Failed(err error) {
 	monitor(monitorCritical, s)
 }
 
+// LockError states that we could not get the lock.
+func LockError(err error) {
+	s := fmt.Sprintln("Failed to get lock: ", err)
+	log.Println("FATAL:", s)
+	monitor(monitorCritical, s)
+}
+
 var interval, timeout time.Duration
 var pipeStderr, pipeStdout bool
 var useSyslog bool
+var killRunning bool
 var command string
 
 func parseFlags() {
@@ -76,6 +83,7 @@ func parseFlags() {
 	flag.BoolVar(&useSyslog, "s", false, "log via syslog")
 	flag.BoolVar(&pipeStderr, "e", true, "pipe stderr to log")
 	flag.BoolVar(&pipeStdout, "o", true, "pipe stdout to log")
+	flag.BoolVar(&killRunning, "k", false, "kill already running instance of command")
 	flag.Parse()
 
 	if flag.NArg() < 1 {
@@ -121,17 +129,10 @@ func main() {
 
 	SpreadWait(interval)
 
-	// Ensures that only one of these command runs concurrently on this
-	// machine.  Also cleans up stale locks of dead instances.
-	lock_dir := os.TempDir()
-	os.Mkdir(filepath.Join(lock_dir, monitoringEvent), 0700)
-	lock, _ := lockfile.New(filepath.Join(lock_dir, monitoringEvent, monitoringEvent+".lock"))
-	if err := lock.TryLock(); err != nil {
-		if err != lockfile.ErrBusy {
-			log.Printf("ERROR: locking %s: reason: %v\n", lock, err)
-		}
+	lock, err := createLock(killRunning)
+	if err != nil {
 		timer.Stop()
-		Busy()
+		LockError(err)
 		return
 	}
 	defer lock.Unlock()
