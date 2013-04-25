@@ -1,3 +1,19 @@
+periodicnoise (0.2) unstable; urgency=low
+
+  [ Ingo Oeser ]
+  * Move project to Jimdo
+  * note authors
+  * add syslog logging
+  * option to log stderr and stdout (both enabled by default)
+
+  [ Mathias Lafeldt ]
+  * Stream output of executed command to stdout
+  * Change "Ok" string to "OK" (proper English)
+  * Allow to kill running instance of command with -k
+  * Add "periodicnoise" to lock filename
+
+ -- Ingo Oeser <ingo@jimdo.com>  Thu, 25 Apr 2013 13:35:04 +0200
+
 periodicnoise (0.1) unstable; urgency=low
 
   * Initial release.
