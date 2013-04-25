@@ -21,7 +21,7 @@ export GOPATH=$(CURDIR)/debian/go_build
 
 override_dh_auto_configure:
 	mkdir -p $(GOPATH)/src/$(dir $(GO_PACKAGE))
-	rsync -a --cvs-exclude --exclude=debian $(CURDIR)/. $(GOPATH)/src/$(GO_PACKAGE)
+	rsync -a --cvs-exclude --exclude=debian --exclude=git-hooks $(CURDIR)/. $(GOPATH)/src/$(GO_PACKAGE)
 	go get `go list -f '{{range .Deps}}{{print .}} {{end}}' $(GO_PACKAGE)` $(GO_PACKAGE)
 	go get `go list -f '{{range .Deps}}{{print .}} {{end}}' $(GO_COMMANDS)` $(GO_COMMANDS)
 
