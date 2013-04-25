@@ -3,7 +3,6 @@ package main
 import (
 	"flag"
 	"fmt"
-	"github.com/nightlyone/lockfile"
 	"log"
 	"math/rand"
 	"os"
@@ -59,6 +58,13 @@ func Busy() {
 // failure to the monitoring. Also Logs error output.
 func Failed(err error) {
 	s := fmt.Sprintln("Failed to execute: ", err)
+	log.Println("FATAL:", s)
+	monitor(monitorCritical, s)
+}
+
+// LockError states that we could not get the lock.
+func LockError(err error) {
+	s := fmt.Sprintln("Failed to get lock: ", err)
 	log.Println("FATAL:", s)
 	monitor(monitorCritical, s)
 }
@@ -123,39 +129,11 @@ func main() {
 
 	SpreadWait(interval)
 
-	// Ensures that only one of these command runs concurrently on this
-	// machine.  Also cleans up stale locks of dead instances.
-	// FIXME(mlafeldt) add monitoring to locking logic
-	lock, err := createLock()
+	lock, err := createLock(killRunning)
 	if err != nil {
-		log.Fatal(err)
-	}
-	if err := lock.TryLock(); err != nil {
-		if err != lockfile.ErrBusy {
-			log.Printf("ERROR: locking %s: reason: %v\n", lock, err)
-		}
-
-		if killRunning {
-			process, err := lock.GetOwner()
-			if err != nil {
-				log.Fatal(err)
-			}
-			if err := process.Kill(); err != nil {
-				log.Fatal(err)
-			}
-
-			// Remove old lock and create new one
-			if err := lock.Unlock(); err != nil {
-				log.Fatal(err)
-			}
-			if err := lock.TryLock(); err != nil {
-				log.Fatal(err)
-			}
-		} else {
-			timer.Stop()
-			Busy()
-			return
-		}
+		timer.Stop()
+		LockError(err)
+		return
 	}
 	defer lock.Unlock()
 
