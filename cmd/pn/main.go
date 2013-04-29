@@ -27,7 +27,7 @@ func SpreadWait(interval time.Duration) {
 // monitoring.
 func Ok() {
 	log.Println("OK")
-	monitor(monitorOk, "")
+	monitor(monitorOk, "OK")
 }
 
 // NotAvailable states that the command could not be started successfully. It
