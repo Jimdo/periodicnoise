@@ -1,5 +1,3 @@
- * event configurable
- * strip extension from script basename
  * use first line of script stdout as message
  * fixup readme example for nsca
  * nsca needs a non-empty message

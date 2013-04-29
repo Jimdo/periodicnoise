@@ -82,6 +82,7 @@ func parseFlags() {
 		"set execution timeout for command, e.g. 45s, 2m, 1h30m, default: 1m")
 	flag.BoolVar(&useSyslog, "s", false, "log via syslog")
 	flag.BoolVar(&pipeStderr, "e", true, "pipe stderr to log")
+	flag.StringVar(&monitoringEvent, "E", "", "monitoring event (defaults to check_foo for /path/check_foo.sh ")
 	flag.BoolVar(&pipeStdout, "o", true, "pipe stdout to log")
 	flag.BoolVar(&killRunning, "k", false, "kill already running instance of command")
 	flag.Parse()
@@ -108,7 +109,14 @@ func main() {
 	log.SetFlags(0)
 	parseFlags()
 
-	monitoringEvent = filepath.Base(command)
+	// default check_foo for /path/check_foo.sh
+	if monitoringEvent == "" {
+		monitoringEvent = filepath.Base(command)
+		if ext := filepath.Ext(command); ext != "" {
+			monitoringEvent = monitoringEvent[0 : len(monitoringEvent)-len("."+ext)]
+		}
+	}
+
 	logger, err := getLogger(useSyslog)
 	if err != nil {
 		log.Fatal("FATAL: cannot contact syslog")
