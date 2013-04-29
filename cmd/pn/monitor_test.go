@@ -7,11 +7,11 @@ import (
 
 func setup_monitoringCalls() {
 	monitoringCalls = map[monitoringResult]string{
-		monitorOk:       `send_ncsa "%(event): [OK] %(message)"`,
-		monitorCritical: `send_ncsa "%(event): [CRITICAL] %(message)"`,
-		monitorWarning:  `send_ncsa "%(event): [WARNING] %(message)"`,
-		monitorDebug:    `send_ncsa "%(event): [DEBUG] %(message)"`,
-		monitorUnknown:  `send_ncsa "%(event): [UNKNOWN] %(message)"`,
+		monitorOk:       `send_nsca "%(event): [OK] %(message)"`,
+		monitorCritical: `send_nsca "%(event): [CRITICAL] %(message)"`,
+		monitorWarning:  `send_nsca "%(event): [WARNING] %(message)"`,
+		monitorDebug:    `send_nsca "%(event): [DEBUG] %(message)"`,
+		monitorUnknown:  `send_nsca "%(event): [UNKNOWN] %(message)"`,
 	}
 }
 
@@ -28,7 +28,7 @@ func TestMonitorOk(t *testing.T) {
 	setup_monitoringCalls()
 	monitoringEvent = "tests"
 	ce := &mockCommanderExecutor{
-		want: `/bin/sh -c send_ncsa "tests: [OK] "`,
+		want: `/bin/sh -c send_nsca "tests: [OK] "`,
 	}
 
 	commander = Commander(ce)

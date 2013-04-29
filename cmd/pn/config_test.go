@@ -13,7 +13,7 @@ func init() {
 }
 
 func makeMonitoringCommand(result monitoringResult) string {
-	return fmt.Sprintf("send_ncsa \"%%(event): [%s] %%(message)\"", result)
+	return fmt.Sprintf("send_nsca \"%%(event): [%s] %%(message)\"", result)
 }
 
 func TestHasMonitoringCommands(t *testing.T) {
