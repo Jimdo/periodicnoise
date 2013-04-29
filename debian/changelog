@@ -1,3 +1,12 @@
+periodicnoise (0.3) unstable; urgency=low
+
+  [ Ingo Oeser ]
+  * configurable monitoring event, strip extension
+  * provide non-empty message in ok case
+  * fix readme example for nsca
+
+ -- Ingo Oeser <ingo@jimdo.com>  Mon, 29 Apr 2013 14:45:45 +0200
+
 periodicnoise (0.2) unstable; urgency=low
 
   [ Ingo Oeser ]
