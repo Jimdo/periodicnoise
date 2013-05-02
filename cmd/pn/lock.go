@@ -11,7 +11,7 @@ import (
 func createLock(killRunning bool) (lockfile.Lockfile, error) {
 	var zero lockfile.Lockfile
 
-	filename := filepath.Join(os.TempDir(), "periodicnoise",
+	filename := filepath.Join(os.TempDir(), "periodicnoise-"+
 		monitoringEvent, monitoringEvent+".lock")
 
 	if err := os.MkdirAll(filepath.Dir(filename), 0700); err != nil {
