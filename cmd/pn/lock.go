@@ -8,7 +8,7 @@ import (
 )
 
 var ErrNeedDirectory = errors.New("Lockfile directory not a directory")
-var ErrNotExclusive = errors.New("Lockfile directory not owned exclusive")
+var ErrNotExclusive = errors.New("Lockfile directory not owned exclusively")
 
 // create attack safe private directory
 // if file creation fails there, then you there is only an ownership problem
