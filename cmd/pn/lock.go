@@ -1,20 +1,45 @@
 package main
 
 import (
+	"errors"
 	"github.com/nightlyone/lockfile"
 	"os"
 	"path/filepath"
 )
 
+var ErrNeedDirectory = errors.New("Lockfile directory not a directory")
+var ErrNotExclusive = errors.New("Lockfile directory not owned exclusively")
+
+// create attack safe private directory
+// if file creation fails there, then you there is only an ownership problem
+// left, but this will be caught anyway now.
+func privateSubdir(dirname string) error {
+	if err := os.MkdirAll(dirname, 0700); err != nil {
+		return err
+	}
+
+	fi, err := os.Lstat(dirname)
+	if err != nil {
+		return err
+	}
+
+	if mode := fi.Mode(); !mode.IsDir() {
+		return ErrNeedDirectory
+	} else if mode.Perm() != 0700 {
+		return ErrNotExclusive
+	}
+	return nil
+}
+
 // Create a new lock file. Ensures that only one of these command runs
 // concurrently on this machine.  Also cleans up stale locks of dead instances.
 func createLock(killRunning bool) (lockfile.Lockfile, error) {
 	var zero lockfile.Lockfile
-
-	filename := filepath.Join(os.TempDir(), "periodicnoise",
+	filename := filepath.Join(os.TempDir(), "periodicnoise-"+
 		monitoringEvent, monitoringEvent+".lock")
 
-	if err := os.MkdirAll(filepath.Dir(filename), 0700); err != nil {
+	dirname := filepath.Dir(filename)
+	if err := privateSubdir(dirname); err != nil {
 		return zero, err
 	}
 
