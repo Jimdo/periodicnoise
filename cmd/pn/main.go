@@ -77,7 +77,7 @@ var command string
 
 func parseFlags() {
 	flag.DurationVar(&interval, "i", -1,
-		"set execution interval for command, e.g. 45s, 2m, 1h30m, default: 1/10 of timeout")
+		"set maximum execution start delay for command, e.g. 45s, 2m, 1h30m, default: 1/10 of timeout")
 	flag.DurationVar(&timeout, "t", 1*time.Minute,
 		"set execution timeout for command, e.g. 45s, 2m, 1h30m, default: 1m")
 	flag.BoolVar(&useSyslog, "s", false, "log via syslog")
