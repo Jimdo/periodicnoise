@@ -4,6 +4,7 @@ import (
 	"log"
 	"os/exec"
 	"strings"
+	"syscall"
 )
 
 var monitoringCalls = map[monitoringResult]string{}
@@ -13,13 +14,34 @@ type monitoringResult int
 
 const (
 	monitorOk monitoringResult = iota
-	monitorCritical
 	monitorWarning
-	monitorDebug
+	monitorCritical
 	monitorUnknown
-	monitorLast  = monitorUnknown
+	monitorDebug
+	monitorLast  = monitorDebug
 	monitorFirst = monitorOk
 )
+
+/* return codes besides Sucess and failure are unix specific, so only use there */
+func error2exit(err error) (monitoringResult, string) {
+	if err == nil {
+		return monitorOk, "OK"
+	}
+
+	exiterr, ok := err.(*exec.ExitError)
+	if !ok {
+		return monitorUnknown, err.Error()
+	}
+	exitstate, ok := exiterr.Sys().(syscall.WaitStatus)
+	if !ok {
+		return monitorUnknown, err.Error()
+	}
+	switch exitstate.ExitStatus() {
+	case 0, 1, 2, 3:
+		return monitoringResult(exitstate.ExitStatus()), err.Error()
+	}
+	return monitorUnknown, err.Error()
+}
 
 var monitoringResults = map[monitoringResult]string{
 	monitorOk:       "OK",
