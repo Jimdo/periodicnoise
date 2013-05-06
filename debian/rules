@@ -28,14 +28,11 @@ override_dh_auto_configure:
 override_dh_auto_test:
 	cd $(GOPATH)/src/$(GO_PACKAGE) && go test ./...
 
-override_dh_auto_build:
-	go build $(GO_COMMANDS)
-
 override_dh_install:
 	dh_install --sourcedir=$(GOPATH)/bin pn $(DESTDIR)/usr/bin
 
 # These are not needed for go programs
-override_dh_pysupport override_dh_pysupport2 override_dh_perl:
+override_dh_pysupport override_dh_pysupport2 override_dh_perl override_dh_auto_build:
 
 override_dh_clean:
 	rm -rf $(GOPATH)
