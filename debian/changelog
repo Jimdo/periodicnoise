@@ -1,3 +1,15 @@
+periodicnoise (0.4) unstable; urgency=low
+
+  [ Ingo Oeser ]
+  * use distinct, private diretory for different events
+  * add nagios wrapper option to pass on exit code of wrapped command 
+    and use first 8KiB of stdout as message
+
+  [ Mathias Lafeldt ]
+  * Use printf instead of echo -e (which is a bashism)
+
+ -- Ingo Oeser <ingo@jimdo.com>  Mon, 06 May 2013 14:55:19 +0200
+
 periodicnoise (0.3) unstable; urgency=low
 
   [ Ingo Oeser ]
