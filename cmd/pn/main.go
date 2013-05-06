@@ -113,7 +113,7 @@ func main() {
 	if monitoringEvent == "" {
 		monitoringEvent = filepath.Base(command)
 		if ext := filepath.Ext(command); ext != "" {
-			monitoringEvent = monitoringEvent[0 : len(monitoringEvent)-len("."+ext)]
+			monitoringEvent = monitoringEvent[0 : len(monitoringEvent)-len("."+ext)+1]
 		}
 	}
 
