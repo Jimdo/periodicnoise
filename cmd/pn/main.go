@@ -96,7 +96,7 @@ func parseFlags() {
 	flag.DurationVar(&timeout, "t", 1*time.Minute,
 		"set execution timeout for command, e.g. 45s, 2m, 1h30m, default: 1m")
 	flag.BoolVar(&useSyslog, "s", false, "log via syslog")
-	flag.BoolVar(&wrapNagios, "n", false, "wrap nagios plugin (pass on return codes, pass first output line as message)")
+	flag.BoolVar(&wrapNagios, "n", false, "wrap nagios plugin (pass on return codes, pass first 8KiB of stdout as message)")
 	flag.BoolVar(&pipeStderr, "e", true, "pipe stderr to log")
 	flag.StringVar(&monitoringEvent, "E", "", "monitoring event (defaults to check_foo for /path/check_foo.sh ")
 	flag.BoolVar(&pipeStdout, "o", true, "pipe stdout to log")
