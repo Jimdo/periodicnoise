@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
+	"io"
 	"log"
 	"math/rand"
 	"os"
@@ -26,8 +27,14 @@ func SpreadWait(interval time.Duration) {
 // Ok states that execution went well. Logs debug output and reports ok to
 // monitoring.
 func Ok() {
+	var message string
 	log.Println("OK")
-	monitor(monitorOk, "OK")
+	if firstbytes == nil {
+		message = "OK"
+	} else {
+		message = string(firstbytes.Bytes())
+	}
+	monitor(monitorOk, message)
 }
 
 // NotAvailable states that the command could not be started successfully. It
@@ -57,9 +64,15 @@ func Busy() {
 // Failed states that the command didn't execute successfully and reports
 // failure to the monitoring. Also Logs error output.
 func Failed(err error) {
-	s := fmt.Sprintln("Failed to execute: ", err)
+	var message string
+	code, s := error2exit(err)
 	log.Println("FATAL:", s)
-	monitor(monitorCritical, s)
+	if firstbytes == nil {
+		message = s
+	} else {
+		message = string(firstbytes.Bytes())
+	}
+	monitor(code, message)
 }
 
 // LockError states that we could not get the lock.
@@ -69,9 +82,11 @@ func LockError(err error) {
 	monitor(monitorCritical, s)
 }
 
+var firstbytes *CapWriter
 var interval, timeout time.Duration
 var pipeStderr, pipeStdout bool
 var useSyslog bool
+var wrapNagios bool
 var killRunning bool
 var command string
 
@@ -81,6 +96,7 @@ func parseFlags() {
 	flag.DurationVar(&timeout, "t", 1*time.Minute,
 		"set execution timeout for command, e.g. 45s, 2m, 1h30m, default: 1m")
 	flag.BoolVar(&useSyslog, "s", false, "log via syslog")
+	flag.BoolVar(&wrapNagios, "n", false, "wrap nagios plugin (pass on return codes, pass first 8KiB of stdout as message)")
 	flag.BoolVar(&pipeStderr, "e", true, "pipe stderr to log")
 	flag.StringVar(&monitoringEvent, "E", "", "monitoring event (defaults to check_foo for /path/check_foo.sh ")
 	flag.BoolVar(&pipeStdout, "o", true, "pipe stdout to log")
@@ -152,7 +168,20 @@ func main() {
 		if err != nil {
 			log.Fatal(err)
 		}
-		logStream(stdout, logger, &wg)
+		if wrapNagios {
+			firstbytes = NewCapWriter(8192)
+			stdout := io.TeeReader(stdout, firstbytes)
+			logStream(stdout, logger, &wg)
+		} else {
+			logStream(stdout, logger, &wg)
+		}
+	} else if wrapNagios {
+		stdout, err := cmd.StdoutPipe()
+		if err != nil {
+			log.Fatal(err)
+		}
+		firstbytes = NewCapWriter(8192)
+		go io.Copy(firstbytes, stdout)
 	}
 
 	if pipeStderr {
