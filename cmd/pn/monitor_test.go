@@ -7,10 +7,10 @@ import (
 
 func setup_monitoringCalls() {
 	monitoringCalls = map[monitoringResult]string{
-		monitorOk:       `echo -e "somehost.example.com;%(event);0;%(message)\n" |/usr/sbin/send_nsca -H nagios.example.com -d ";"`,
-		monitorWarning:  `echo -e "somehost.example.com;%(event);1;%(message)\n" |/usr/sbin/send_nsca -H nagios.example.com -d ";"`,
-		monitorCritical: `echo -e "somehost.example.com;%(event);2;%(message)\n" |/usr/sbin/send_nsca -H nagios.example.com -d ";"`,
-		monitorUnknown:  `echo -e "somehost.example.com;%(event);3;%(message)\n" |/usr/sbin/send_nsca -H nagios.example.com -d ";"`,
+		monitorOk:       `printf "somehost.example.com;%(event);0;%(message)\n" |/usr/sbin/send_nsca -H nagios.example.com -d ";"`,
+		monitorWarning:  `printf "somehost.example.com;%(event);1;%(message)\n" |/usr/sbin/send_nsca -H nagios.example.com -d ";"`,
+		monitorCritical: `printf "somehost.example.com;%(event);2;%(message)\n" |/usr/sbin/send_nsca -H nagios.example.com -d ";"`,
+		monitorUnknown:  `printf "somehost.example.com;%(event);3;%(message)\n" |/usr/sbin/send_nsca -H nagios.example.com -d ";"`,
 	}
 }
 
@@ -27,7 +27,7 @@ func TestMonitorOk(t *testing.T) {
 	setup_monitoringCalls()
 	monitoringEvent = "tests"
 	ce := &mockCommanderExecutor{
-		want: `/bin/sh -c echo -e "somehost.example.com;tests;0;OK\n" |/usr/sbin/send_nsca -H nagios.example.com -d ";"`,
+		want: `/bin/sh -c printf "somehost.example.com;tests;0;OK\n" |/usr/sbin/send_nsca -H nagios.example.com -d ";"`,
 	}
 
 	commander = Commander(ce)
