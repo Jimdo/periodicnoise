@@ -1,3 +1,10 @@
+periodicnoise (0.5) unstable; urgency=low
+
+  [ Ingo Oeser ]
+  * use better flag package, incompatible changes in option names
+
+ -- Mathias Lafeldt <mathias.lafeldt@gmail.com>  Wed, 08 May 2013 15:20:32 +0200
+
 periodicnoise (0.4) unstable; urgency=low
 
   [ Ingo Oeser ]
