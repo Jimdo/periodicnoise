@@ -14,13 +14,13 @@ import (
 )
 
 // Avoid thundering herd problem on remote services used by this command.
-// Interval will be 0, if this is not an issue.
-func SpreadWait(interval time.Duration) {
-	if interval > 0 {
+// maxDelay will be 0 if this is not an issue.
+func SpreadWait(maxDelay time.Duration) {
+	if maxDelay > 0 {
 		// Seed random generator with current process ID
 		rand.Seed(int64(os.Getpid()))
-		// Sleep for random amount of time within interval
-		time.Sleep(time.Duration(rand.Int63n(int64(interval))))
+		// Sleep for random amount of time within maxDelay
+		time.Sleep(time.Duration(rand.Int63n(int64(maxDelay))))
 	}
 }
 
@@ -85,7 +85,7 @@ func LockError(err error) {
 var firstbytes *CapWriter
 
 var opts struct {
-	Interval         time.Duration `short:"i" long:"max-start-delay" description:"optional maximum execution start delay for command, e.g. 45s, 2m, 1h30m"`
+	MaxDelay         time.Duration `short:"d" long:"max-start-delay" description:"optional maximum execution start delay for command, e.g. 45s, 2m, 1h30m"`
 	Timeout          time.Duration `short:"t" long:"timeout" default:"1m" description:"set execution timeout for command, e.g. 45s, 2m, 1h30m"`
 	UseSyslog        bool          `short:"s" long:"use-syslog" description:"log via syslog instead of stderr"`
 	WrapNagiosPlugin bool          `short:"n" long:"wrap-nagios-plugin" description:"wrap nagios plugin (pass on return codes, pass first 8KiB of stdout as message)"`
@@ -115,8 +115,8 @@ func parseFlags() []string {
 		log.Fatal("FATAL: no command to execute")
 	}
 
-	if opts.Interval >= opts.Timeout {
-		log.Fatal("FATAL: interval >= timeout, no time left for actual command execution")
+	if opts.MaxDelay >= opts.Timeout {
+		log.Fatal("FATAL: max delay >= timeout, no time left for actual command execution")
 	}
 
 	return args
@@ -162,7 +162,7 @@ func main() {
 		os.Exit(0)
 	})
 
-	SpreadWait(opts.Interval)
+	SpreadWait(opts.MaxDelay)
 
 	lock, err := createLock(opts.KillRunning)
 	if err != nil {
