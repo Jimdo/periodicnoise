@@ -119,7 +119,6 @@ func parseFlags() []string {
 		log.Fatal("FATAL: interval >= timeout, no time left for actual command execution")
 	}
 
-	monitoringEvent = opts.MonitoringEvent
 	return args
 }
 
@@ -136,8 +135,9 @@ func main() {
 
 	command := args[0]
 
-	// default check_foo for /path/check_foo.sh
+	monitoringEvent = opts.MonitoringEvent
 	if monitoringEvent == "" {
+		// event for command /path/check_foo.sh will be check_foo
 		monitoringEvent = filepath.Base(command)
 		if ext := filepath.Ext(command); ext != "" {
 			monitoringEvent = monitoringEvent[0 : len(monitoringEvent)-len("."+ext)+1]
