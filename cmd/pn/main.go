@@ -1,8 +1,8 @@
 package main
 
 import (
-	"flag"
 	"fmt"
+	"github.com/jessevdk/go-flags"
 	"io"
 	"log"
 	"math/rand"
@@ -14,13 +14,13 @@ import (
 )
 
 // Avoid thundering herd problem on remote services used by this command.
-// Interval will be 0, if this is not an issue.
-func SpreadWait(interval time.Duration) {
-	if interval > 0 {
+// maxDelay will be 0 if this is not an issue.
+func SpreadWait(maxDelay time.Duration) {
+	if maxDelay > 0 {
 		// Seed random generator with current process ID
 		rand.Seed(int64(os.Getpid()))
-		// Sleep for random amount of time within interval
-		time.Sleep(time.Duration(rand.Int63n(int64(interval))))
+		// Sleep for random amount of time within maxDelay
+		time.Sleep(time.Duration(rand.Int63n(int64(maxDelay))))
 	}
 }
 
@@ -83,39 +83,43 @@ func LockError(err error) {
 }
 
 var firstbytes *CapWriter
-var interval, timeout time.Duration
-var pipeStderr, pipeStdout bool
-var useSyslog bool
-var wrapNagios bool
-var killRunning bool
-var command string
 
-func parseFlags() {
-	flag.DurationVar(&interval, "i", -1,
-		"set maximum execution start delay for command, e.g. 45s, 2m, 1h30m, default: 1/10 of timeout")
-	flag.DurationVar(&timeout, "t", 1*time.Minute,
-		"set execution timeout for command, e.g. 45s, 2m, 1h30m, default: 1m")
-	flag.BoolVar(&useSyslog, "s", false, "log via syslog")
-	flag.BoolVar(&wrapNagios, "n", false, "wrap nagios plugin (pass on return codes, pass first 8KiB of stdout as message)")
-	flag.BoolVar(&pipeStderr, "e", true, "pipe stderr to log")
-	flag.StringVar(&monitoringEvent, "E", "", "monitoring event (defaults to check_foo for /path/check_foo.sh ")
-	flag.BoolVar(&pipeStdout, "o", true, "pipe stdout to log")
-	flag.BoolVar(&killRunning, "k", false, "kill already running instance of command")
-	flag.Parse()
+var opts struct {
+	MaxDelay         time.Duration `short:"d" long:"max-start-delay" description:"optional maximum execution start delay for command, e.g. 45s, 2m, 1h30m"`
+	Timeout          time.Duration `short:"t" long:"timeout" default:"1m" description:"set execution timeout for command, e.g. 45s, 2m, 1h30m"`
+	UseSyslog        bool          `short:"s" long:"use-syslog" description:"log via syslog instead of stderr"`
+	WrapNagiosPlugin bool          `short:"n" long:"wrap-nagios-plugin" description:"wrap nagios plugin (pass on return codes, pass first 8KiB of stdout as message)"`
+	NoPipeStderr     bool          `long:"no-stream-stderr" description:"do not stream stderr to log"`
+	NoPipeStdout     bool          `long:"no-stream-stdout" description:"do not stream stdout to log"`
+	MonitoringEvent  string        `short:"E" long:"monitor-event" description:"monitoring event (defaults to check_foo for /path/check_foo.sh)"`
+	KillRunning      bool          `short:"k" long:"kill-running" description:"kill already running instance of command"`
+}
 
-	if flag.NArg() < 1 {
+func parseFlags() []string {
+	p := flags.NewParser(&opts, flags.Default)
+
+	// display nice usage message
+	p.Usage = "[OPTIONS]... COMMAND\n\nSafely wrap execution of COMMAND in e.g. a cron job"
+
+	args, err := p.Parse()
+	if err != nil {
+		// --help is not an error
+		if e, ok := err.(*flags.Error); ok && e.Type == flags.ErrHelp {
+			return nil
+		} else {
+			log.Fatal("FATAL: invalid arguments")
+		}
+	}
+
+	if len(args) < 1 {
 		log.Fatal("FATAL: no command to execute")
 	}
 
-	command = flag.Arg(0)
-
-	if interval >= timeout {
-		log.Fatal("FATAL: interval >= timeout, no time left for actual command execution")
+	if opts.MaxDelay >= opts.Timeout {
+		log.Fatal("FATAL: max delay >= timeout, no time left for actual command execution")
 	}
 
-	if interval == -1 {
-		interval = timeout / 10
-	}
+	return args
 }
 
 func main() {
@@ -123,17 +127,25 @@ func main() {
 	var wg sync.WaitGroup
 
 	log.SetFlags(0)
-	parseFlags()
+	args := parseFlags()
 
-	// default check_foo for /path/check_foo.sh
+	// exit program after --help
+	if len(args) == 0 {
+		return
+	}
+
+	command := args[0]
+
+	monitoringEvent = opts.MonitoringEvent
 	if monitoringEvent == "" {
+		// event for command /path/check_foo.sh will be check_foo
 		monitoringEvent = filepath.Base(command)
 		if ext := filepath.Ext(command); ext != "" {
 			monitoringEvent = monitoringEvent[0 : len(monitoringEvent)-len("."+ext)+1]
 		}
 	}
 
-	logger, err := getLogger(useSyslog)
+	logger, err := getLogger(opts.UseSyslog)
 	if err != nil {
 		log.Fatal("FATAL: cannot contact syslog")
 		return
@@ -142,7 +154,7 @@ func main() {
 	loadMonitoringCommands()
 
 	// FIXME(nightlyone) try two intervals instead of one?
-	timer := time.AfterFunc(timeout, func() {
+	timer := time.AfterFunc(opts.Timeout, func() {
 		TimedOut()
 		if cmd != nil && cmd.Process != nil {
 			cmd.Process.Kill()
@@ -151,9 +163,9 @@ func main() {
 		os.Exit(0)
 	})
 
-	SpreadWait(interval)
+	SpreadWait(opts.MaxDelay)
 
-	lock, err := createLock(killRunning)
+	lock, err := createLock(opts.KillRunning)
 	if err != nil {
 		timer.Stop()
 		LockError(err)
@@ -161,21 +173,21 @@ func main() {
 	}
 	defer lock.Unlock()
 
-	cmd = exec.Command(command, flag.Args()[1:]...)
+	cmd = exec.Command(command, args[1:]...)
 
-	if pipeStdout {
+	if !opts.NoPipeStdout {
 		stdout, err := cmd.StdoutPipe()
 		if err != nil {
 			log.Fatal(err)
 		}
-		if wrapNagios {
+		if opts.WrapNagiosPlugin {
 			firstbytes = NewCapWriter(8192)
 			stdout := io.TeeReader(stdout, firstbytes)
 			logStream(stdout, logger, &wg)
 		} else {
 			logStream(stdout, logger, &wg)
 		}
-	} else if wrapNagios {
+	} else if opts.WrapNagiosPlugin {
 		stdout, err := cmd.StdoutPipe()
 		if err != nil {
 			log.Fatal(err)
@@ -184,7 +196,7 @@ func main() {
 		go io.Copy(firstbytes, stdout)
 	}
 
-	if pipeStderr {
+	if !opts.NoPipeStderr {
 		stderr, err := cmd.StderrPipe()
 		if err != nil {
 			log.Fatal(err)
