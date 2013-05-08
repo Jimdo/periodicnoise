@@ -129,6 +129,7 @@ func main() {
 	log.SetFlags(0)
 	args := parseFlags()
 
+	// exit program after --help
 	if len(args) == 0 {
 		return
 	}
