@@ -8,10 +8,15 @@ import (
 	"sync"
 )
 
+// With Go 1.1, we can specify the syslog facility in addition to the priority:
+// https://code.google.com/p/go/source/browse/src/pkg/log/syslog/syslog.go?name=go1.1
+// To stay compatible with older Go versions, set the facility by hand for now.
+const LOG_DAEMON = (3 << 3)
+
 // derive logger
 func getLogger(useSyslog bool) (logger io.Writer, err error) {
 	if useSyslog {
-		logger, err = syslog.New(syslog.LOG_NOTICE, monitoringEvent)
+		logger, err = syslog.New(LOG_DAEMON|syslog.LOG_NOTICE, monitoringEvent)
 	} else {
 		logger = os.Stderr
 		log.SetPrefix(monitoringEvent + ": ")
