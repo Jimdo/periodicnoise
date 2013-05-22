@@ -116,29 +116,6 @@ func startServer(n, la string, done chan<- string) (addr string, sock io.Closer,
 	return
 }
 
-func TestWithSimulated(t *testing.T) {
-	msg := "Test 123"
-	transport := []string{"unix", "unixgram", "udp", "tcp"}
-
-	for _, tr := range transport {
-		done := make(chan string)
-		addr, _, _ := startServer(tr, "", done)
-		if tr == "unix" || tr == "unixgram" {
-			defer os.Remove(addr)
-		}
-		s, err := Dial(tr, addr, LOG_INFO|LOG_USER, "syslog_test")
-		if err != nil {
-			t.Fatalf("Dial() failed: %v", err)
-		}
-		err = s.Info(msg)
-		if err != nil {
-			t.Fatalf("log failed: %v", err)
-		}
-		check(t, msg, <-done)
-		s.Close()
-	}
-}
-
 func TestFlap(t *testing.T) {
 	net := "unix"
 	done := make(chan string)
