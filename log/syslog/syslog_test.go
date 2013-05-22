@@ -176,10 +176,6 @@ func TestNew(t *testing.T) {
 	if LOG_LOCAL7 != 23<<3 {
 		t.Fatalf("LOG_LOCAL7 has wrong value")
 	}
-	if testing.Short() {
-		// Depends on syslog daemon running, and sometimes it's not.
-		t.Skip("skipping syslog test during -short")
-	}
 
 	s, err := New(LOG_INFO|LOG_USER, "the_tag")
 	if err != nil {
@@ -190,9 +186,6 @@ func TestNew(t *testing.T) {
 }
 
 func TestNewLogger(t *testing.T) {
-	if testing.Short() {
-		t.Skip("skipping syslog test during -short")
-	}
 	f, err := NewLogger(LOG_USER|LOG_INFO, 0)
 	if f == nil {
 		t.Error(err)
@@ -200,9 +193,6 @@ func TestNewLogger(t *testing.T) {
 }
 
 func TestDial(t *testing.T) {
-	if testing.Short() {
-		t.Skip("skipping syslog test during -short")
-	}
 	f, err := Dial("", "", (LOG_LOCAL7|LOG_DEBUG)+1, "syslog_test")
 	if f != nil {
 		t.Fatalf("Should have trapped bad priority")
