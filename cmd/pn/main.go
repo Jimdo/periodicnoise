@@ -93,6 +93,7 @@ var opts struct {
 	NoPipeStdout     bool          `long:"no-stream-stdout" description:"do not stream stdout to log"`
 	MonitoringEvent  string        `short:"E" long:"monitor-event" description:"monitoring event (defaults to check_foo for /path/check_foo.sh)"`
 	KillRunning      bool          `short:"k" long:"kill-running" description:"kill already running instance of command"`
+	NoMonitoring     bool          `long:"no-monitoring" description:"wrap command without sending monitoring events"`
 }
 
 func parseFlags() []string {

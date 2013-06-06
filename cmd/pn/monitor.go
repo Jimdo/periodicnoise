@@ -62,7 +62,7 @@ func monitor(state monitoringResult, message string) {
 	}
 
 	call, exists := monitoringCalls[state]
-	if !exists {
+	if !exists || opts.NoMonitoring {
 		return
 	}
 
