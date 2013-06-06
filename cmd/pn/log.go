@@ -31,11 +31,7 @@ func logStream(r io.Reader, logger io.Writer, wg *sync.WaitGroup) {
 	wg.Add(1)
 
 	go func() {
-		for {
-			if _, err := io.Copy(logger, r); err != nil {
-				break
-			}
-		}
+		io.Copy(logger, r)
 		wg.Done()
 	}()
 }
