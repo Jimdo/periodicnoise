@@ -39,6 +39,32 @@ func TestMonitorOk(t *testing.T) {
 	}
 }
 
+func TestNoMonitoring(t *testing.T) {
+	oldCalls := monitoringCalls
+	oldEvent := monitoringEvent
+	oldCommander := commander
+	oldOpts := opts
+	defer func() {
+		monitoringCalls = oldCalls
+		monitoringEvent = oldEvent
+		commander = oldCommander
+		opts = oldOpts
+	}()
+
+	setup_monitoringCalls()
+	opts.NoMonitoring = true
+	monitoringEvent = "tests"
+	ce := &mockCommanderExecutor{}
+
+	commander = Commander(ce)
+	monitor(monitorOk, "OK")
+	if ce.got != ce.want {
+		t.Errorf("got '%v', want '%v'", ce.got, ce.want)
+	} else {
+		t.Logf("got '%v', want '%v'", ce.got, ce.want)
+	}
+}
+
 // mock infrastructure for os.exec Command and run
 type mockCommanderExecutor struct {
 	got, want string
