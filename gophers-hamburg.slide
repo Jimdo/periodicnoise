@@ -1,0 +1,156 @@
+Managing periodic noise
+The tooling all devops write again and again
+27 Jun 2013
+Tags: periodicnoise, Jimdo, puppet, cron
+
+Ingo Oeser
+Devops Ninja, Jimdo GmbH
+https://github.com/nightlyone
+@nightlyone
+
+* What is Jimdo
+
+We do a homepage toolkit, everyone can use.
+
+.link http:///www.jimdo.com Jimdo GmbH
+
+* Do you have crons?
+
+	# /etc/crontab: system-wide crontab
+	SHELL=/bin/sh
+	PATH=/sbin:/bin:/usr/sbin:/usr/bin
+	MAILTO="admins@example.com"
+
+	# m h dom mon dow user  command
+	17 *    * * *   root    cd / && run-parts --report /etc/cron.hourly
+	25 6    * * *   root    test -x /usr/sbin/anacron || ( cd / && run-parts --report /etc/cron.daily )
+	47 6    * * 7   root    test -x /usr/sbin/anacron || ( cd / && run-parts --report /etc/cron.weekly )
+	52 6    1 * *   root    test -x /usr/sbin/anacron || ( cd / && run-parts --report /etc/cron.monthly )
+
+* You've got mail from a daemon
+
+- Who is actually reading cron mails?
+- Are they relevant?
+- Why?
+- Can it be done better?
+
+* Wait, we have nagios!
+
+- let's send it to nagios
+
+	echo -e "myhost;what to show in nagios;3;My custom message\n" \
+	|/usr/sbin/send_nsca -H nagioshost -d ";"
+
+- let's skip the ssh and nrpe solutions, they suffer badly from timeouts.
+
+* There is more...
+- stdout? stderr? return codes?
+- cron running longer than expected?
+- should it only be running once?
+- stale locks?
+- killing?
+
+
+* There is even more on large scale
+- resource limiting?
+- retry?
+- spread start of execution? 
+- spread by host? By time?
+- log to syslog or event based log framework
+- running many of those every minute?
+
+* The usual solution
+- bunch of chained shell scripts
+- implemented in each script
+- various language libs
+- takes away precious resources for the core apps
+- shell wrappers more expensive than the actual cron script wrapped
+- even worse: language specific supervisior solutions
+- I implemented this at 4 companies with various people
+
+* Go to the rescue...
+- fast startup times
+- low memory and cpu overhead
+- handle timouts excellent
+- streaming stdout/stderr independently
+- discard even lots of output (java execptions!) fast
+- complete prototype after 6h of coding
+
+* ... Periodicnoise
+- spreads the start of it within a random interval, if executed on many machines
+- reports results to your logging system
+- reports state of execution (busy, failure, ok) to your monitoring system
+- skips execution, if a previous execution is still running, reporting this fact
+- ensures that only one task of this name can run at a time
+- terminates running execution, if it takes too long
+- cleans up stale lockfiles of itself
+- open source
+.link https://github.com/Jimdo/periodicnoise
+- used in production at Jimdo
+
+* lets try it
+
+positive example
+
+	ingo@leni: ~/sources/periodicnoise (master)$ pn /bin/true
+	true: OK
+
+negative example
+
+	ingo@leni: ~/sources/periodicnoise (master)$ pn /bin/false
+	false: FATAL: exit status 1
+
+* Full spec
+	Usage:
+	  pn [OPTIONS]... COMMAND
+
+	Safely wrap execution of COMMAND in e.g. a cron job
+
+	Help Options:
+	  -h, --help                Show this help message
+
+	Application Options:
+	  -d, --max-start-delay     optional maximum execution start delay for command, e.g. 1h30m (0)
+	  -t, --timeout             set execution timeout for command, e.g. 45s, 2m, 1h30m (1m)
+	  -s, --use-syslog          log via syslog instead of stderr
+	  -n, --wrap-nagios-plugin  wrap nagios plugin (pass exit codes, 8KiB stdout)
+	      --no-stream-stderr    do not stream stderr to log
+	      --no-stream-stdout    do not stream stdout to log
+	  -E, --monitor-event       monitoring event (defaults to check_foo for /path/check_foo.sh)
+	  -k, --kill-running        kill already running instance of command
+	      --no-monitoring       wrap command without sending monitoring events
+
+* Resource usage
+	ingo@leni: ~/sources/periodicnoise (master)$ /usr/bin/time -v pn /bin/true
+	true: OK
+		Command being timed: "pn /bin/true"
+		User time (seconds): 0.01
+		System time (seconds): 0.00
+		Percent of CPU this job got: 100%
+		Elapsed (wall clock) time (h:mm:ss or m:ss): 0:00.02
+		Maximum resident set size (kbytes): 3128
+		Minor (reclaiming a frame) page faults: 1042
+		Voluntary context switches: 38
+		Involuntary context switches: 5
+		Page size (bytes): 4096
+		Exit status: 0
+
+* Puppetize!
+
+- we use puppet at jimdo, so we provided a module for it 
+.link https://github.com/Jimdo/puppet-periodicnoise
+
+	periodicnoise::monitored_cron{ 'morning-sales-report' :
+		command => '/home/crons/morning-sales-report',
+		hour => 8,
+		minute => 0,
+		execution_timeout => '2h',
+	}
+
+* Thanks!
+
+* Questions?
+
+This quick and dirty presentation can be viewed online:
+
+.link http://talks.godoc.org/github.com/Jimdo/periodicnoise/gophers-hamburg.slide
