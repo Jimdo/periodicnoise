@@ -142,7 +142,7 @@ func main() {
 		// event for command /path/check_foo.sh will be check_foo
 		monitoringEvent = filepath.Base(command)
 		if ext := filepath.Ext(command); ext != "" {
-			monitoringEvent = monitoringEvent[0 : len(monitoringEvent)-len("."+ext)+1]
+			monitoringEvent = monitoringEvent[0 : len(monitoringEvent)-len(ext)]
 		}
 	}
 
