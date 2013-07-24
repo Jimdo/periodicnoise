@@ -1,13 +1,9 @@
 package main
 
 import (
-	// With Go 1.1, we can specify the syslog facility in addition to the priority:
-	// https://code.google.com/p/go/source/browse/src/pkg/log/syslog/syslog.go?name=go1.1
-	// To be able to set the facility with older versions of Go, we simply
-	// added the log package from Go 1.1 to periodicnoise.
-	"github.com/Jimdo/periodicnoise/log/syslog"
 	"io"
 	"log"
+	"log/syslog"
 	"os"
 	"sync"
 )
