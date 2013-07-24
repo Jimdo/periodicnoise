@@ -1,3 +1,19 @@
+periodicnoise (0.6) unstable; urgency=medium
+
+  [ Mathias Lafeldt ]
+  * Set syslog facility to daemon; no longer write to kernel facility
+
+  [ Ingo Oeser ]
+  * Implement shell escaping (security fix)
+  * Implement wrapping without sending events.
+  * Drop Go 1.0.x support, require Go 1.1 now
+  * Add manpage
+
+  [ Mathias Lafeldt ]
+  * Fix endless loop in logStream()
+
+ -- Ingo Oeser <ingo@jimdo.com>  Wed, 24 Jul 2013 23:55:11 +0200
+
 periodicnoise (0.5) unstable; urgency=low
 
   [ Ingo Oeser ]
