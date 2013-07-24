@@ -1,0 +1,88 @@
+.TH "pn" "1" "25 July 2013" "" ""
+.SH "NAME"
+pn \- Powerful wrapper for periodic tasks (e.g. controlled by cron)
+.SH SYNOPSIS
+\fBpn\fP [OPTIONS]... COMMAND
+
+Safely wrap execution of COMMAND in e.g. a cron job
+.SH DESCRIPTION
+
+.PP
+Periodicnoise (short: \fBpn\fP) is a powerful wrapper for periodic tasks, such as the ones by the \fBcron\fP deamon, which:
+.PP
+.IP o
+scatters the start of it within a random interval. Useful if executed on many machines at the same time.
+.IP o
+reports results to your logging system
+.IP o
+reports state of execution (busy, failure, ok) to your monitoring system
+.IP o
+skips execution, if a previous execution is still running, reporting this fact
+.IP o
+ensures that only one task of this name can run at a time
+.IP o
+terminates running execution, if it takes too long
+.IP o
+cleans up stale log files
+
+.SH OPTIONS
+.TP
+\fB-d, --max-start-delay\fP
+optional maximum execution start delay for command, e.g. 45s, 2m, 1h30m
+.TP
+\fB-t, --timeout\fP
+set execution timeout for command, e.g. 45s, 2m, 1h30m
+.TP
+\fB-s, --use-syslog\fP
+log via syslog instead of stderr
+.TP
+\fB-n, --wrap-nagios-plugin\fP
+wrap nagios plugin (pass on return codes, pass first 8KiB of stdout as message)
+.TP
+\fB--no-stream-stderr\fP
+do not stream stderr of wrapped command to log
+.TP
+\fB--no-stream-stdout\fP
+do not stream stdout of wrapped command to log
+.TP
+\fB-E, --monitor-event\fP
+monitoring event (defaults to check_foo for /path/check_foo.sh)
+.TP
+\fB-k, --kill-running\fP
+kill already running instance of command
+.TP
+\fB--no-monitoring\fP
+wrap command without sending monitoring events
+.SH "FILES"
+
+.PP 
+\fB/etc/periodicnoise/config\fP is for global settings,
+.PP
+\fB$HOME/.config/periodicnoise/config\fP for per-user settings.
+Per user settings overwrite global settings for this user. These files are in ini style.
+.PP 
+
+.PP
+Currently there is only a monitoring section defined, where you can define commands triggered by various results of the execution.
+.PP
+
+.SH "SEE ALSO"
+
+.PP 
+\fBcron\fP(8)
+.PP 
+.SH "THANKS"
+
+.PP 
+Thanks to S\(:o\&nke R\(:u\&mpler and Deniz Adrian for evangelizing usage of this tool.
+.PP
+Special thanks to Daniel Bonkowksi for puppet integration
+.PP 
+.SH "AUTHOR"
+
+.PP 
+periodicnoise was originally hacked together by Ingo Oeser and later refined
+and heavily extended by Mathias Lafeldt
+.PP 
+Sources are available at https://github.com/Jimdo/periodicnoise 
+and a useful puppet module for it is available at https://github.com/Jimdo/puppet-periodicnoise
