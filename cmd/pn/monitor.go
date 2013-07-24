@@ -3,6 +3,7 @@ package main
 import (
 	"log"
 	"os/exec"
+	"strconv"
 	"strings"
 	"syscall"
 )
@@ -55,6 +56,19 @@ func (m monitoringResult) String() string {
 	return monitoringResults[m]
 }
 
+var shellEscaper = strings.NewReplacer(
+	// pairs of replacements, s. http://godoc.org/strings#Replacer for details
+	`$`, `\$`,
+	"`", "\\`",
+	"%", "%%",
+)
+
+func shellEscape(s string) string {
+	res := shellEscaper.Replace(strconv.Quote(s))
+	// undo the quote chars
+	return res[1 : len(res)-1]
+}
+
 // Hook for passive monitoring solution
 func monitor(state monitoringResult, message string) {
 	if _, exists := monitoringResults[state]; !exists {
@@ -66,9 +80,9 @@ func monitor(state monitoringResult, message string) {
 		return
 	}
 
-	call = strings.Replace(call, "%(event)", monitoringEvent, -1)
+	call = strings.Replace(call, "%(event)", shellEscape(monitoringEvent), -1)
 	call = strings.Replace(call, "%(state)", state.String(), -1)
-	call = strings.Replace(call, "%(message)", message, -1)
+	call = strings.Replace(call, "%(message)", shellEscape(message), -1)
 	// do argument interpolation
 	cmd := commander.Command("/bin/sh", "-c", call)
 	err := cmd.Run()
