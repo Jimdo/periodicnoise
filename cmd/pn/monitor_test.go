@@ -69,13 +69,16 @@ func TestNoMonitoring(t *testing.T) {
 
 var escapeTest = [...]string{
 	// stuff bash interprets, space
-	"# & ; ` | * ? ~ < > ^ ( ) [ ] { } $ \x0a \\ ' \" %",
+	"# & ; ` | * ? ~ < > ^ ( ) [ ] { } $ \x0a ' \" %",
 
 	// stuff bash interprets, no space
-	"#&;`|*?~<>^()[]{}$\x0a\\'\"%",
+	"#&;`|*?~<>^()[]{}$\x0a'\"%",
 
 	// printf codes:
-	"% \\ (used to form %.0#-*+d, or \\ \a \b \f \n \r \t \v \" \062 \062 \x32 \u0032 and \U00000032)",
+	"% (used to form %.0#-*+d, or \a \b \f \n \r \t \v \" \062 \062 \x32 \u0032 and \U00000032)",
+
+	// extra case (bash and dash bet to differ here in certain cases)
+	"\\",
 }
 
 func TestShellEscaping(t *testing.T) {
@@ -91,14 +94,14 @@ func TestShellEscaping(t *testing.T) {
 	}()
 
 	monitoringCalls = map[monitoringResult]string{
-		monitorOk: `printf "somehost.example.com;%(event);0;%(message)\n" | cat`,
+		monitorOk: `printf "somehost.example.com;%(event);0;%(message) \n" | cat`,
 	}
 	opts.NoMonitoring = false
 	monitoringEvent = "escape"
 
 	for i, sample := range escapeTest {
 		ce := &capturingCommanderExecutor{
-			want: "somehost.example.com;escape;0;" + sample + "\n",
+			want: "somehost.example.com;escape;0;" + sample + " \n",
 		}
 
 		commander = Commander(ce)
