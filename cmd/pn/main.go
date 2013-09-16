@@ -194,7 +194,7 @@ func main() {
 			log.Fatal(err)
 		}
 		firstbytes = NewCapWriter(8192)
-		go io.Copy(firstbytes, stdout)
+		logStream(stdout, firstbytes, &wg)
 	}
 
 	if !opts.NoPipeStderr {
