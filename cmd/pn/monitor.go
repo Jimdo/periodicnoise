@@ -87,7 +87,7 @@ func monitor(state monitoringResult, message string) {
 	cmd := commander.Command("/bin/sh", "-c", call)
 	err := cmd.Run()
 	if err != nil {
-		log.Fatalln("FATAL: Monitoring script failed, hope your monitoring system detects dead clients")
+		log.Fatalln("FATAL: Monitoring script failed with: ", err)
 	}
 }
 
