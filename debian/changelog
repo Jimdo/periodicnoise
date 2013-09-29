@@ -1,3 +1,9 @@
+periodicnoise (0.8) raring; urgency=low
+
+  * stripped go binaries are discuraged
+
+ -- Ingo Oeser <ingo@jimdo.com>  Sun, 29 Sep 2013 13:26:38 +0200
+
 periodicnoise (0.7) unstable; urgency=medium
 
   * Report reason why the monitoring script failed
