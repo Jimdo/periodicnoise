@@ -37,3 +37,7 @@ override_dh_pysupport override_dh_pysupport2 override_dh_perl override_dh_auto_b
 override_dh_clean:
 	rm -rf $(GOPATH)
 	dh_clean
+
+override_dh_strip:
+	# strip disabled as golang upstream doesn't support it and it makes go
+	# crash. See http://bugs.debian.org/717172
