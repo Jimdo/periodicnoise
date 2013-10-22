@@ -211,6 +211,8 @@ func main() {
 		return
 	}
 
+	wg.Wait()
+
 	if err := cmd.Wait(); err != nil {
 		timer.Stop()
 		Failed(err)
@@ -218,6 +220,4 @@ func main() {
 		timer.Stop()
 		Ok()
 	}
-
-	wg.Wait()
 }
