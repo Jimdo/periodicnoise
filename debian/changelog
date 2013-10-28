@@ -1,3 +1,11 @@
+periodicnoise (0.10) unstable; urgency=low
+
+  * Use syslog package from Go 1.2rc2 which adds handling of write errors.
+  * Retry writing to log stream.
+  * Write log errors to stderr (as there is no logger).
+
+ -- Mathias Lafeldt <mathias.lafeldt@gmail.com>  Mon, 28 Oct 2013 18:40:18 +0100
+
 periodicnoise (0.9) unstable; urgency=low
 
   * Make sure log streams are done before command returns
