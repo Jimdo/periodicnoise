@@ -3,9 +3,10 @@ package main
 import (
 	"io"
 	"log"
-	"log/syslog"
 	"os"
 	"sync"
+
+	"github.com/Jimdo/periodicnoise/syslog"
 )
 
 // derive logger
