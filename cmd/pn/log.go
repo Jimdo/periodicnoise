@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"io"
 	"log"
 	"os"
@@ -34,6 +35,8 @@ func logStream(r io.Reader, logger io.Writer, wg *sync.WaitGroup) {
 		for {
 			if _, err := io.Copy(logger, r); err == nil {
 				break
+			} else {
+				fmt.Fprintln(os.Stderr, "pn log error:", err)
 			}
 		}
 		wg.Done()
