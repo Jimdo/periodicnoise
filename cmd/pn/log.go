@@ -1,11 +1,13 @@
 package main
 
 import (
+	"fmt"
 	"io"
 	"log"
-	"log/syslog"
 	"os"
 	"sync"
+
+	"github.com/Jimdo/periodicnoise/syslog"
 )
 
 // derive logger
@@ -27,7 +29,16 @@ func logStream(r io.Reader, logger io.Writer, wg *sync.WaitGroup) {
 	wg.Add(1)
 
 	go func() {
-		io.Copy(logger, r)
+		// Retry writing to logstream until it can be fully written.
+		// If io.Copy returns nil, everything has been copied
+		// successfully and this routine can be stopped.
+		for {
+			if _, err := io.Copy(logger, r); err == nil {
+				break
+			} else {
+				fmt.Fprintln(os.Stderr, "pn log error:", err)
+			}
+		}
 		wg.Done()
 	}()
 }
