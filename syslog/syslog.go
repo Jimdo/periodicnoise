@@ -33,6 +33,9 @@ type Priority int
 const severityMask = 0x07
 const facilityMask = 0xf8
 
+var writeTimeout = 1 * time.Second
+var connectTimeout = 1 * time.Second
+
 const (
 	// Severity.
 
@@ -100,6 +103,7 @@ type Writer struct {
 type serverConn interface {
 	writeString(p Priority, hostname, tag, s, nl string) error
 	close() error
+	setWriteDeadline(t time.Time) error
 }
 
 type netConn struct {
@@ -273,7 +277,11 @@ func (w *Writer) write(p Priority, msg string) (int, error) {
 		nl = "\n"
 	}
 
-	err := w.conn.writeString(p, w.hostname, w.tag, msg, nl)
+	err := w.conn.setWriteDeadline(time.Now().Add(writeTimeout))
+	if err != nil {
+		return 0, err
+	}
+	err = w.conn.writeString(p, w.hostname, w.tag, msg, nl)
 	if err != nil {
 		return 0, err
 	}
@@ -303,6 +311,10 @@ func (n *netConn) writeString(p Priority, hostname, tag, msg, nl string) error {
 
 func (n *netConn) close() error {
 	return n.conn.Close()
+}
+
+func (n *netConn) setWriteDeadline(t time.Time) error {
+	return n.conn.SetWriteDeadline(t)
 }
 
 // NewLogger creates a log.Logger whose output is written to
