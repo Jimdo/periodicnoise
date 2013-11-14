@@ -19,7 +19,7 @@ func unixSyslog() (conn serverConn, err error) {
 	logPaths := []string{"/dev/log", "/var/run/syslog"}
 	for _, network := range logTypes {
 		for _, path := range logPaths {
-			conn, err := net.Dial(network, path)
+			conn, err := net.DialTimeout(network, path, connectTimeout)
 			if err != nil {
 				continue
 			} else {

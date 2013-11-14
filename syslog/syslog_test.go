@@ -14,6 +14,7 @@ import (
 	"log"
 	"net"
 	"os"
+	"strings"
 	"sync"
 	"testing"
 	"time"
@@ -68,6 +69,68 @@ func runStreamSyslog(l net.Listener, done chan<- string, wg *sync.WaitGroup) {
 			c.Close()
 		}(c)
 	}
+}
+
+func runHangAfterFirstLine(l net.Listener, connected chan<- bool, stop <-chan bool, wg *sync.WaitGroup) {
+	defer wg.Done()
+	for i := 0; i < 2; i++ {
+		var c net.Conn
+		var err error
+		if c, err = l.Accept(); err != nil {
+			return
+		}
+		wg.Add(1)
+		go func(c net.Conn) {
+			defer wg.Done()
+			connected <- true
+			<-stop
+			c.Close()
+		}(c)
+	}
+}
+
+func TestWriteTimeout(t *testing.T) {
+	// use ioutil.TempFile to get a name that is unique
+	f, err := ioutil.TempFile("", "syslogtest")
+	if err != nil {
+		t.Fatal("TempFile: ", err)
+	}
+	f.Close()
+	la := f.Name()
+	os.Remove(la)
+	n := "unix"
+
+	l, e := net.Listen(n, la)
+	if e != nil {
+		t.Fatalf("cannot start server: %v", e)
+	}
+	addr := l.Addr().String()
+	connected := make(chan bool, 2)
+	stop := make(chan bool)
+	wg := new(sync.WaitGroup)
+	wg.Add(1)
+	go runHangAfterFirstLine(l, connected, stop, wg)
+
+	w, err := Dial(n, addr, LOG_USER|LOG_ERR, "tag")
+	if err != nil {
+		t.Fatalf("syslog.Dial() failed: %v", err)
+		return
+	}
+
+	<-connected
+	if err := w.Info(strings.Repeat("test", 100000)); err != nil {
+		if e, ok := err.(net.Error); !ok || !e.Timeout() {
+			t.Error("Expected network timeout, got", err)
+		}
+	}
+	if len(connected) == 0 {
+		t.Errorf("Expected reconnect, but have %d connections open", len(connected))
+	}
+	close(stop)
+	w.Close()
+	l.Close()
+	wg.Wait()
+
 }
 
 func startServer(n, la string, done chan<- string) (addr string, sock io.Closer, wg *sync.WaitGroup) {
