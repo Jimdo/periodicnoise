@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"io"
 	"log"
 	"math/rand"
 	"os"
@@ -140,34 +139,10 @@ func main() {
 	defer lock.Unlock()
 
 	cmd = exec.Command(command, args[1:]...)
-
-	if !opts.NoPipeStdout {
-		stdout, err := cmd.StdoutPipe()
-		if err != nil {
-			log.Fatal(err)
-		}
-		if opts.WrapNagiosPlugin {
-			firstbytes = NewCapWriter(8192)
-			stdout := io.TeeReader(stdout, firstbytes)
-			logStream(stdout, logger, &wg)
-		} else {
-			logStream(stdout, logger, &wg)
-		}
-	} else if opts.WrapNagiosPlugin {
-		stdout, err := cmd.StdoutPipe()
-		if err != nil {
-			log.Fatal(err)
-		}
-		firstbytes = NewCapWriter(8192)
-		logStream(stdout, firstbytes, &wg)
-	}
-
-	if !opts.NoPipeStderr {
-		stderr, err := cmd.StderrPipe()
-		if err != nil {
-			log.Fatal(err)
-		}
-		logStream(stderr, logger, &wg)
+	err = connectOutputs(cmd, logger, &wg)
+	if err != nil {
+		log.Fatal(err)
+		return
 	}
 
 	if err := cmd.Start(); err != nil {

@@ -6,6 +6,15 @@ import (
 	"time"
 )
 
+type StartupError struct {
+	stage string
+	err   error
+}
+
+func (e *StartupError) Error() string {
+	return fmt.Sprintf("Startup phase: Cannot %s: %s", e.stage, e.err)
+}
+
 type NotAvailableError struct {
 	args []string // arg[0] is the command
 	err  error

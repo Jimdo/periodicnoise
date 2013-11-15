@@ -6,6 +6,7 @@ import (
 	"log"
 	"net"
 	"os"
+	"os/exec"
 	"sync"
 	"syscall"
 	"time"
@@ -76,4 +77,37 @@ func logStream(r io.Reader, logger io.Writer, wg *sync.WaitGroup) {
 		}
 		wg.Done()
 	}()
+}
+
+// Connect stderr/stdout of future child to logger and background copy jobs.
+func connectOutputs(cmd *exec.Cmd, logger io.Writer, wg *sync.WaitGroup) error {
+	if !opts.NoPipeStdout {
+		stdout, err := cmd.StdoutPipe()
+		if err != nil {
+			return &StartupError{"connecting stdout", err}
+		}
+		if opts.WrapNagiosPlugin {
+			firstbytes = NewCapWriter(8192)
+			stdout := io.TeeReader(stdout, firstbytes)
+			logStream(stdout, logger, wg)
+		} else {
+			logStream(stdout, logger, wg)
+		}
+	} else if opts.WrapNagiosPlugin {
+		stdout, err := cmd.StdoutPipe()
+		if err != nil {
+			return &StartupError{"connecting stdout", err}
+		}
+		firstbytes = NewCapWriter(8192)
+		logStream(stdout, firstbytes, wg)
+	}
+
+	if !opts.NoPipeStderr {
+		stderr, err := cmd.StderrPipe()
+		if err != nil {
+			return &StartupError{"connecting stderr", err}
+		}
+		logStream(stderr, logger, wg)
+	}
+	return nil
 }
