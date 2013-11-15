@@ -14,20 +14,20 @@ func TestLocking(t *testing.T) {
 	}
 	t.Log("Got lockfile")
 	if lf2, err := createLock(false); err == nil {
-		t.Error("got lockfile, but expected %v", lockfile.ErrBusy)
+		t.Errorf("got lockfile, but expected '%v'", lockfile.ErrBusy)
 		lf2.Unlock()
 	} else if err != lockfile.ErrBusy {
-		t.Error("bad error got %v, want %v", err, lockfile.ErrBusy)
+		t.Errorf("bad error got '%v', want '%v'", err, lockfile.ErrBusy)
 	} else {
-		t.Log("got expected %v", err)
+		t.Logf("got expected '%v'", err)
 	}
 	lf.Unlock()
 
 	lf3, err := createLock(false)
 	if err != nil {
-		t.Error("unexpected error %v", err)
+		t.Errorf("unexpected error %v", err)
 	} else {
-		t.Log("got lockfile", err)
+		t.Log("got lockfile", lf3)
 		lf3.Unlock()
 	}
 }
