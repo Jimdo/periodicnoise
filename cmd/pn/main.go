@@ -82,6 +82,19 @@ func Locked(err error) {
 
 var firstbytes *CapWriter
 
+//hardtimer provides a hard deadline, after which cmd will not run anymore
+func hardtimer(now time.Time, cmd *exec.Cmd, errc chan error) *time.Timer {
+	return time.AfterFunc(opts.Timeout-time.Since(now), func() {
+		errc <- &TimeoutError{
+			after: opts.Timeout,
+		}
+		if cmd != nil && cmd.Process != nil {
+			cmd.Process.Kill()
+			// FIXME(nightlyone) log the kill
+		}
+	})
+}
+
 func main() {
 	var cmd *exec.Cmd
 	var wg sync.WaitGroup
@@ -113,23 +126,15 @@ func main() {
 
 	loadMonitoringCommands()
 
-	// FIXME(nightlyone) try two intervals instead of one?
-	timer := time.AfterFunc(opts.Timeout, func() {
-		TimedOut(&TimeoutError{
-			after: opts.Timeout,
-		})
-		if cmd != nil && cmd.Process != nil {
-			cmd.Process.Kill()
-			// FIXME(nightlyone) log the kill
-		}
-		os.Exit(0)
-	})
+	now := time.Now()
 
 	SpreadWait(opts.MaxDelay)
 
+	// central error code channel for asynchronous errors
+	errc := make(chan error, 1)
+
 	lock, err := createLock(opts.KillRunning)
 	if err != nil {
-		timer.Stop()
 		Locked(&LockError{
 			name: string(lock),
 			err:  err,
@@ -140,27 +145,42 @@ func main() {
 
 	cmd = exec.Command(command, args[1:]...)
 	err = connectOutputs(cmd, logger, &wg)
-	if err != nil {
-		log.Fatal(err)
-		return
+	if err == nil {
+		timer := hardtimer(now, cmd, errc)
+		go processLife(cmd, errc)
+		err = <-errc
+		// wait for output streams to finish in case we exit normally
+		if _, ok := err.(*TimeoutError); !ok {
+			wg.Wait()
+		}
+		timer.Stop()
 	}
 
-	if err := cmd.Start(); err != nil {
-		timer.Stop()
-		NotAvailable(&NotAvailableError{
-			args: cmd.Args,
-			err:  err,
-		})
-		return
-	}
-
-	wg.Wait()
-
-	if err := cmd.Wait(); err != nil {
-		timer.Stop()
-		Failed(err)
-	} else {
-		timer.Stop()
+	if err == nil {
+		// best case
 		Ok()
+	} else {
+		// now handle any errors
+		switch e := err.(type) {
+		case *TimeoutError:
+			// we should collect wait state for what we killed
+			if cmd != nil && cmd.Process != nil {
+				<-errc
+				// wait for output streams to finish in case got killed
+				wg.Wait()
+			}
+			TimedOut(e)
+		case *NotAvailableError:
+			NotAvailable(e)
+		case *StartupError:
+			NotAvailable(e)
+		case *exec.ExitError:
+			Failed(e)
+		case *LockError:
+			Locked(e)
+		default:
+			// is unknown error really a fail? Shouldn't happend anyway!
+			Failed(e)
+		}
 	}
 }
