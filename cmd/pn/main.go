@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"github.com/jessevdk/go-flags"
 	"io"
@@ -47,8 +48,8 @@ func NotAvailable(err error) {
 
 // TimedOut states that the command took too long and reports failure to the
 // monitoring.
-func TimedOut() {
-	s := "execution took too long"
+func TimedOut(err error) {
+	s := fmt.Sprintln(err)
 	log.Println("FATAL:", s)
 	monitor(monitorCritical, s)
 }
@@ -75,8 +76,8 @@ func Failed(err error) {
 	monitor(code, message)
 }
 
-// LockError states that we could not get the lock.
-func LockError(err error) {
+// Locked states that we could not get the lock.
+func Locked(err error) {
 	s := fmt.Sprintln("Failed to get lock: ", err)
 	log.Println("FATAL:", s)
 	monitor(monitorCritical, s)
@@ -156,7 +157,7 @@ func main() {
 
 	// FIXME(nightlyone) try two intervals instead of one?
 	timer := time.AfterFunc(opts.Timeout, func() {
-		TimedOut()
+		TimedOut(errors.New("execution took too long"))
 		if cmd != nil && cmd.Process != nil {
 			cmd.Process.Kill()
 			// FIXME(nightlyone) log the kill
@@ -169,7 +170,7 @@ func main() {
 	lock, err := createLock(opts.KillRunning)
 	if err != nil {
 		timer.Stop()
-		LockError(err)
+		Locked(err)
 		return
 	}
 	defer lock.Unlock()
