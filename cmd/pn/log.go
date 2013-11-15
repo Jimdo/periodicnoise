@@ -13,10 +13,13 @@ import (
 	"github.com/Jimdo/periodicnoise/syslog"
 )
 
+// this enables testing
+var logNetwork, logRemoteAddress string
+
 // derive logger
 func getLogger(useSyslog bool) (logger io.Writer, err error) {
 	if useSyslog {
-		logger, err = syslog.New(syslog.LOG_DAEMON|syslog.LOG_NOTICE, monitoringEvent)
+		logger, err = syslog.Dial(logNetwork, logRemoteAddress, syslog.LOG_DAEMON|syslog.LOG_NOTICE, monitoringEvent)
 	} else {
 		logger = os.Stderr
 		log.SetPrefix(monitoringEvent + ": ")
