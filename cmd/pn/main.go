@@ -1,7 +1,6 @@
 package main
 
 import (
-	"errors"
 	"fmt"
 	"io"
 	"log"
@@ -117,7 +116,9 @@ func main() {
 
 	// FIXME(nightlyone) try two intervals instead of one?
 	timer := time.AfterFunc(opts.Timeout, func() {
-		TimedOut(errors.New("execution took too long"))
+		TimedOut(&TimeoutError{
+			after: opts.Timeout,
+		})
 		if cmd != nil && cmd.Process != nil {
 			cmd.Process.Kill()
 			// FIXME(nightlyone) log the kill
@@ -130,7 +131,10 @@ func main() {
 	lock, err := createLock(opts.KillRunning)
 	if err != nil {
 		timer.Stop()
-		Locked(err)
+		Locked(&LockError{
+			name: string(lock),
+			err:  err,
+		})
 		return
 	}
 	defer lock.Unlock()
@@ -168,7 +172,10 @@ func main() {
 
 	if err := cmd.Start(); err != nil {
 		timer.Stop()
-		NotAvailable(err)
+		NotAvailable(&NotAvailableError{
+			args: cmd.Args,
+			err:  err,
+		})
 		return
 	}
 
