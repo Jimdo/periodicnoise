@@ -32,6 +32,7 @@ func disableTimer(timer *time.Timer) *time.Timer {
 //  * wait for output streams
 //  * free the lock
 //  * report situation via return code
+//  * handles signals
 func CoreLoop(args []string, logger io.Writer) error {
 	var wg sync.WaitGroup
 
@@ -70,8 +71,9 @@ func CoreLoop(args []string, logger io.Writer) error {
 			hardlimit = disableTimer(hardlimit)
 			log.Println("INFO: Received signal", signal)
 
-			// Terminate child
-			if KillProcess(cmd.Process) == nil {
+			if grp, _ := ProcessGroup(cmd.Process); KillProcess(grp) == nil {
+				log.Println("INFO: Killed process group, because we have been signalled")
+			} else if KillProcess(cmd.Process) == nil {
 				log.Println("INFO: Killed process, because we have been signalled")
 			} else {
 				// normal case for fast kill
@@ -106,8 +108,10 @@ func CoreLoop(args []string, logger io.Writer) error {
 			// block signals, since we exit anyway now
 			sigc = nil
 
-			// now terminate process, if it exists
-			if KillProcess(cmd.Process) == nil {
+			// now terminate process tree, if it exists
+			if grp, _ := ProcessGroup(cmd.Process); KillProcess(grp) == nil {
+				log.Println("INFO: Killed process tree")
+			} else if KillProcess(cmd.Process) == nil {
 				log.Println("INFO: Killed process")
 			} else {
 				// very fishy, should never get here, but we still handle that crap. Better Fatal exit?

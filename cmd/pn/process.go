@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"os"
 	"os/exec"
 	"os/signal"
@@ -35,6 +36,33 @@ func SignalProcess(p *os.Process, sig syscall.Signal) error {
 
 func KillProcess(p *os.Process) error {
 	return SignalProcess(p, syscall.SIGKILL)
+}
+
+var ErrNotLeader = errors.New("Process is not process group leader")
+
+func ProcessGroup(p *os.Process) (grp *os.Process, err error) {
+	if p == nil {
+		return nil, syscall.ESRCH
+	}
+	pgid, err := syscall.Getpgid(p.Pid)
+	if err != nil {
+		return nil, err
+	}
+
+	// Pids 0 and 1 will have special meaning, so don't return them.
+	if pgid < 2 {
+		return nil, ErrNotLeader
+	}
+
+	// the process is not the leader?
+	if pgid != p.Pid {
+		return nil, ErrNotLeader
+	}
+
+	// This just creates a process object from a Pid in Unix
+	// instead of actually searching it.
+	grp, err = os.FindProcess(-pgid)
+	return grp, err
 }
 
 func processLife(cmd *exec.Cmd, errc chan error) {
