@@ -2,22 +2,25 @@ package main
 
 import (
 	"io"
+	"log"
 	"os/exec"
 	"sync"
 	"time"
 )
 
-//hardtimer provides a hard deadline, after which cmd will not run anymore
-func hardtimer(now time.Time, cmd *exec.Cmd, errc chan error) *time.Timer {
-	return time.AfterFunc(opts.Timeout-time.Since(now), func() {
-		errc <- &TimeoutError{
-			after: opts.Timeout,
-		}
-		if cmd != nil && cmd.Process != nil {
-			cmd.Process.Kill()
-			// FIXME(nightlyone) log the kill
-		}
-	})
+func timerChannel(timer *time.Timer) <-chan time.Time {
+	if timer == nil {
+		return nil
+	} else {
+		return timer.C
+	}
+}
+
+func disableTimer(timer *time.Timer) *time.Timer {
+	if timer != nil {
+		timer.Stop()
+	}
+	return nil
 }
 
 // CoreLoop handles the core logic of our tool,
@@ -50,26 +53,50 @@ func CoreLoop(args []string, logger io.Writer) error {
 		return err
 	}
 
-	// central error code channel for asynchronous errors
+	// error code channel for asynchronous errors from processLife
 	errc := make(chan error, 1)
-
-	timer := hardtimer(now, cmd, errc)
 	go processLife(cmd, errc)
 
-	err = <-errc
+	//hardtimer provides a hard deadline, after which cmd will not run anymore
+	hardlimit := time.NewTimer(opts.Timeout - time.Since(now))
 
-	// We got either triggerd by the timer or finished our try to execute now.
-	// So no need for further timeouts here.
-	timer.Stop()
+	for errc != nil {
+		select {
+		case cerr := <-errc:
+			// we record only ONE error. Timeouts might set an error before we come here.
+			if err == nil {
+				err = cerr
+			}
 
-	_, isTimeout := err.(*TimeoutError)
-	if cmd.Process != nil {
-		// we should collect wait state for what we killed
-		if isTimeout {
-			<-errc
+			// disable error channel, since we are only allowed to receive once here
+			// and like to leave the for loop now.
+			errc = nil
+
+			// clear timer
+			hardlimit = disableTimer(hardlimit)
+
+			// wait for output streams to finish
+			wg.Wait()
+
+		case timeo := <-timerChannel(hardlimit):
+			err = &TimeoutError{
+				after: timeo.Sub(now),
+			}
+			// cancel timers, but collect return code from error channel in next iteration
+			hardlimit = disableTimer(hardlimit)
+
+			// now terminate process, if it exists
+			if cmd.Process != nil {
+				cmd.Process.Kill()
+				log.Println("INFO: Killed process")
+			} else {
+				// very fishy, should never get here, but we still handle that crap. Better Fatal exit?
+				log.Println("FATAL: Timeout before the process even started? Please increase the timeout!")
+
+				// and we are done here, so terminate the loop
+				errc = nil
+			}
 		}
-		// wait for output streams to finish
-		wg.Wait()
 	}
 	return err
 }
