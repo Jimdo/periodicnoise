@@ -86,8 +86,7 @@ func CoreLoop(args []string, logger io.Writer) error {
 			hardlimit = disableTimer(hardlimit)
 
 			// now terminate process, if it exists
-			if cmd.Process != nil {
-				cmd.Process.Kill()
+			if KillProcess(cmd.Process) == nil {
 				log.Println("INFO: Killed process")
 			} else {
 				// very fishy, should never get here, but we still handle that crap. Better Fatal exit?

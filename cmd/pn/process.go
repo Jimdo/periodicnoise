@@ -1,9 +1,22 @@
 package main
 
 import (
+	"os"
 	"os/exec"
 	"syscall"
 )
+
+func SignalProcess(p *os.Process, sig syscall.Signal) error {
+	if p == nil {
+		return syscall.ESRCH
+	}
+	err := p.Signal(sig)
+	return err
+}
+
+func KillProcess(p *os.Process) error {
+	return SignalProcess(p, syscall.SIGKILL)
+}
 
 func processLife(cmd *exec.Cmd, errc chan error) {
 	// FIXME(nightlyone) This works neither in Windows nor Plan9.
