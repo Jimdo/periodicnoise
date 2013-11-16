@@ -60,8 +60,26 @@ func CoreLoop(args []string, logger io.Writer) error {
 	//hardtimer provides a hard deadline, after which cmd will not run anymore
 	hardlimit := time.NewTimer(opts.Timeout - time.Since(now))
 
+	sigc := ReceiveDeadlySignals()
+	defer IgnoreDeadlySignals(sigc)
+
 	for errc != nil {
 		select {
+		case signal := <-sigc:
+			// clear timer
+			hardlimit = disableTimer(hardlimit)
+			log.Println("INFO: Received signal", signal)
+
+			// Terminate child
+			if KillProcess(cmd.Process) == nil {
+				log.Println("INFO: Killed process, because we have been signalled")
+			} else {
+				// normal case for fast kill
+				log.Println("INFO: Killed before the process even started?")
+
+				// and we are done here, so terminate the loop
+				errc = nil
+			}
 		case cerr := <-errc:
 			// we record only ONE error. Timeouts might set an error before we come here.
 			if err == nil {
@@ -85,6 +103,9 @@ func CoreLoop(args []string, logger io.Writer) error {
 			// cancel timers, but collect return code from error channel in next iteration
 			hardlimit = disableTimer(hardlimit)
 
+			// block signals, since we exit anyway now
+			sigc = nil
+
 			// now terminate process, if it exists
 			if KillProcess(cmd.Process) == nil {
 				log.Println("INFO: Killed process")
@@ -97,5 +118,6 @@ func CoreLoop(args []string, logger io.Writer) error {
 			}
 		}
 	}
+
 	return err
 }

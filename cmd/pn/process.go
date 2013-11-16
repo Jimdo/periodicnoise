@@ -3,8 +3,27 @@ package main
 import (
 	"os"
 	"os/exec"
+	"os/signal"
 	"syscall"
 )
+
+var DeadlySignals = []os.Signal{
+	os.Signal(syscall.SIGTERM),
+	os.Signal(syscall.SIGHUP),
+	os.Signal(syscall.SIGINT),
+}
+
+func ReceiveDeadlySignals() (on chan os.Signal) {
+	on = make(chan os.Signal, 1)
+	signal.Notify(on, DeadlySignals...)
+	return on
+}
+
+func IgnoreDeadlySignals(on chan os.Signal) {
+	if on != nil {
+		signal.Stop(on)
+	}
+}
 
 func SignalProcess(p *os.Process, sig syscall.Signal) error {
 	if p == nil {
