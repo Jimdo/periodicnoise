@@ -7,7 +7,6 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"sync"
 	"time"
 )
 
@@ -82,23 +81,7 @@ func Locked(err error) {
 
 var firstbytes *CapWriter
 
-//hardtimer provides a hard deadline, after which cmd will not run anymore
-func hardtimer(now time.Time, cmd *exec.Cmd, errc chan error) *time.Timer {
-	return time.AfterFunc(opts.Timeout-time.Since(now), func() {
-		errc <- &TimeoutError{
-			after: opts.Timeout,
-		}
-		if cmd != nil && cmd.Process != nil {
-			cmd.Process.Kill()
-			// FIXME(nightlyone) log the kill
-		}
-	})
-}
-
 func main() {
-	var cmd *exec.Cmd
-	var wg sync.WaitGroup
-
 	log.SetFlags(0)
 	args := parseFlags()
 
@@ -107,10 +90,9 @@ func main() {
 		return
 	}
 
-	command := args[0]
-
 	monitoringEvent = opts.MonitoringEvent
 	if monitoringEvent == "" {
+		command := args[0]
 		// event for command /path/check_foo.sh will be check_foo
 		monitoringEvent = filepath.Base(command)
 		if ext := filepath.Ext(command); ext != "" {
@@ -126,36 +108,7 @@ func main() {
 
 	loadMonitoringCommands()
 
-	now := time.Now()
-
-	SpreadWait(opts.MaxDelay)
-
-	// central error code channel for asynchronous errors
-	errc := make(chan error, 1)
-
-	lock, err := createLock(opts.KillRunning)
-	if err != nil {
-		Locked(&LockError{
-			name: string(lock),
-			err:  err,
-		})
-		return
-	}
-	defer lock.Unlock()
-
-	cmd = exec.Command(command, args[1:]...)
-	err = connectOutputs(cmd, logger, &wg)
-	if err == nil {
-		timer := hardtimer(now, cmd, errc)
-		go processLife(cmd, errc)
-		err = <-errc
-		// wait for output streams to finish in case we exit normally
-		if _, ok := err.(*TimeoutError); !ok {
-			wg.Wait()
-		}
-		timer.Stop()
-	}
-
+	err = CoreLoop(args, logger)
 	if err == nil {
 		// best case
 		Ok()
@@ -163,12 +116,6 @@ func main() {
 		// now handle any errors
 		switch e := err.(type) {
 		case *TimeoutError:
-			// we should collect wait state for what we killed
-			if cmd != nil && cmd.Process != nil {
-				<-errc
-				// wait for output streams to finish in case got killed
-				wg.Wait()
-			}
 			TimedOut(e)
 		case *NotAvailableError:
 			NotAvailable(e)
