@@ -17,6 +17,7 @@ var opts struct {
 	MonitoringEvent  string        `short:"E" long:"monitor-event" description:"monitoring event (defaults to check_foo for /path/check_foo.sh)"`
 	KillRunning      bool          `short:"k" long:"kill-running" description:"kill already running instance of command"`
 	NoMonitoring     bool          `long:"no-monitoring" description:"wrap command without sending monitoring events"`
+	GraceTime        time.Duration `long:"grace-time" default:"10s" description:"execution timeout for command before sending SIGTERM, e.g. 45s, 2m, 1h30m"`
 }
 
 func parseFlags() []string {

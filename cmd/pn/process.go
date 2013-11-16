@@ -26,7 +26,7 @@ func IgnoreDeadlySignals(on chan os.Signal) {
 	}
 }
 
-func SignalProcess(p *os.Process, sig syscall.Signal) error {
+func SignalProcess(p *os.Process, sig os.Signal) error {
 	if p == nil {
 		return syscall.ESRCH
 	}
@@ -36,6 +36,12 @@ func SignalProcess(p *os.Process, sig syscall.Signal) error {
 
 func KillProcess(p *os.Process) error {
 	return SignalProcess(p, syscall.SIGKILL)
+}
+
+var GracefulSignal os.Signal = syscall.SIGTERM
+
+func TerminateProcess(p *os.Process) error {
+	return SignalProcess(p, GracefulSignal)
 }
 
 var ErrNotLeader = errors.New("Process is not process group leader")
@@ -63,6 +69,16 @@ func ProcessGroup(p *os.Process) (grp *os.Process, err error) {
 	// instead of actually searching it.
 	grp, err = os.FindProcess(-pgid)
 	return grp, err
+}
+
+// Did this command exit gracefully?
+func HasNormalExit(cmd *exec.Cmd) bool {
+	if cmd.ProcessState == nil {
+		return false
+	}
+
+	status := cmd.ProcessState.Sys().(syscall.WaitStatus)
+	return status.Exited()
 }
 
 func processLife(cmd *exec.Cmd, errc chan error) {
