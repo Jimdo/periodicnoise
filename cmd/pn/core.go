@@ -58,7 +58,7 @@ func CoreLoop(args []string, logger io.Writer) error {
 	errc := make(chan error, 1)
 	go processLife(cmd, errc)
 
-	//hardtimer provides a hard deadline, after which cmd will not run anymore
+	// hardlimit provides a hard deadline, after which cmd will not run anymore
 	hardlimit := time.NewTimer(opts.Timeout - time.Since(now))
 
 	sigc := ReceiveDeadlySignals()
