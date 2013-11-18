@@ -3,17 +3,18 @@ package main
 import (
 	"bytes"
 	"log"
+	"os/exec"
 	"strings"
 	"testing"
 
 	flags "github.com/jessevdk/go-flags"
 )
 
-func TestCoreLoopSimple(t *testing.T) {
+func TestCoreLoopExitSuccess(t *testing.T) {
 	oldopts := opts
 	defer func() { opts = oldopts }()
 
-	arguments := "-- sleep 1"
+	arguments := "-- true"
 	args, err := flags.ParseArgs(&opts, strings.Fields(arguments))
 	if err != nil {
 		t.Fatal(err)
@@ -27,7 +28,30 @@ func TestCoreLoopSimple(t *testing.T) {
 	if err != nil {
 		t.Error("want no error, got", err)
 	}
+}
 
+func TestCoreLoopExitError(t *testing.T) {
+	oldopts := opts
+	defer func() { opts = oldopts }()
+
+	arguments := "-- false"
+	args, err := flags.ParseArgs(&opts, strings.Fields(arguments))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	var output bytes.Buffer
+	log.SetOutput(&output)
+
+	err = CoreLoop(args, &bytes.Buffer{})
+	t.Log(output.String())
+	if err == nil {
+		t.Error("want error, got nil")
+	} else if _, ok := err.(*exec.ExitError); ok {
+		t.Log("got", err)
+	} else {
+		t.Error("want exit error, got", err)
+	}
 }
 
 func TestCoreLoopWrongCommand(t *testing.T) {
@@ -52,7 +76,6 @@ func TestCoreLoopWrongCommand(t *testing.T) {
 	} else {
 		t.Error("want not available error, got", err)
 	}
-
 }
 
 func TestCoreLoopHardTimeout(t *testing.T) {
