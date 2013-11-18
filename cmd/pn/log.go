@@ -40,11 +40,7 @@ func canContinue(expire time.Time, had_progress bool, err error) bool {
 			// If we could never connect, we cannot decide, whether this is a temporary failure,
 			// or the address we connect to is simply wrong.
 			switch errno {
-			case syscall.ECONNREFUSED:
-				fallthrough
-			case syscall.ENETUNREACH:
-				fallthrough
-			case syscall.EHOSTUNREACH:
+			case syscall.ECONNREFUSED, syscall.ENETUNREACH, syscall.EHOSTUNREACH:
 				return true
 			}
 		}
