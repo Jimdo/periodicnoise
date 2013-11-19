@@ -1,7 +1,7 @@
 package main
 
 import (
-	"log"
+	"fmt"
 	"time"
 
 	flags "github.com/jessevdk/go-flags"
@@ -20,7 +20,23 @@ var opts struct {
 	GraceTime        time.Duration `long:"grace-time" default:"10s" description:"time left until TIMEOUT, before sending SIGTERM to command, e.g. 45s, 2m, 1h30m"`
 }
 
-func parseFlags() []string {
+type FlagConstraintError struct {
+	Constraint string
+}
+
+func (c *FlagConstraintError) Error() string {
+	return fmt.Sprintf(c.Constraint)
+}
+
+func validateOptionConstraints() error {
+	if opts.MaxDelay >= opts.Timeout {
+		return &FlagConstraintError{Constraint: "max delay >= timeout, no time left for actual command execution"}
+	}
+
+	return nil
+}
+
+func parseFlags() ([]string, error) {
 	p := flags.NewParser(&opts, flags.Default)
 
 	// display nice usage message
@@ -30,23 +46,19 @@ func parseFlags() []string {
 	if err != nil {
 		// --help is not an error
 		if e, ok := err.(*flags.Error); ok && e.Type == flags.ErrHelp {
-			return nil
+			return nil, nil
 		} else {
-			log.Fatal("FATAL: invalid arguments")
+			return nil, err
 		}
 	}
 
 	if len(args) < 1 {
-		log.Fatal("FATAL: no command to execute")
+		return nil, &FlagConstraintError{Constraint: "no command to execute"}
 	}
 
-	if opts.MaxDelay >= opts.Timeout {
-		log.Fatal("FATAL: max delay >= timeout, no time left for actual command execution")
+	if err := validateOptionConstraints(); err != nil {
+		return nil, err
 	}
 
-	if opts.GraceTime >= opts.Timeout {
-		log.Fatal("FATAL: grace time >= timeout, no time left for actual command execution")
-	}
-
-	return args
+	return args, nil
 }
