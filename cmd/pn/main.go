@@ -2,14 +2,11 @@ package main
 
 import (
 	"fmt"
-	"github.com/jessevdk/go-flags"
-	"io"
 	"log"
 	"math/rand"
 	"os"
 	"os/exec"
 	"path/filepath"
-	"sync"
 	"time"
 )
 
@@ -47,8 +44,8 @@ func NotAvailable(err error) {
 
 // TimedOut states that the command took too long and reports failure to the
 // monitoring.
-func TimedOut() {
-	s := "execution took too long"
+func TimedOut(err error) {
+	s := fmt.Sprintln(err)
 	log.Println("FATAL:", s)
 	monitor(monitorCritical, s)
 }
@@ -75,8 +72,8 @@ func Failed(err error) {
 	monitor(code, message)
 }
 
-// LockError states that we could not get the lock.
-func LockError(err error) {
+// Locked states that we could not get the lock.
+func Locked(err error) {
 	s := fmt.Sprintln("Failed to get lock: ", err)
 	log.Println("FATAL:", s)
 	monitor(monitorCritical, s)
@@ -84,49 +81,7 @@ func LockError(err error) {
 
 var firstbytes *CapWriter
 
-var opts struct {
-	MaxDelay         time.Duration `short:"d" long:"max-start-delay" description:"optional maximum execution start delay for command, e.g. 45s, 2m, 1h30m"`
-	Timeout          time.Duration `short:"t" long:"timeout" default:"1m" description:"set execution timeout for command, e.g. 45s, 2m, 1h30m"`
-	UseSyslog        bool          `short:"s" long:"use-syslog" description:"log via syslog instead of stderr"`
-	WrapNagiosPlugin bool          `short:"n" long:"wrap-nagios-plugin" description:"wrap nagios plugin (pass on return codes, pass first 8KiB of stdout as message)"`
-	NoPipeStderr     bool          `long:"no-stream-stderr" description:"do not stream stderr to log"`
-	NoPipeStdout     bool          `long:"no-stream-stdout" description:"do not stream stdout to log"`
-	MonitoringEvent  string        `short:"E" long:"monitor-event" description:"monitoring event (defaults to check_foo for /path/check_foo.sh)"`
-	KillRunning      bool          `short:"k" long:"kill-running" description:"kill already running instance of command"`
-	NoMonitoring     bool          `long:"no-monitoring" description:"wrap command without sending monitoring events"`
-}
-
-func parseFlags() []string {
-	p := flags.NewParser(&opts, flags.Default)
-
-	// display nice usage message
-	p.Usage = "[OPTIONS]... COMMAND\n\nSafely wrap execution of COMMAND in e.g. a cron job"
-
-	args, err := p.Parse()
-	if err != nil {
-		// --help is not an error
-		if e, ok := err.(*flags.Error); ok && e.Type == flags.ErrHelp {
-			return nil
-		} else {
-			log.Fatal("FATAL: invalid arguments")
-		}
-	}
-
-	if len(args) < 1 {
-		log.Fatal("FATAL: no command to execute")
-	}
-
-	if opts.MaxDelay >= opts.Timeout {
-		log.Fatal("FATAL: max delay >= timeout, no time left for actual command execution")
-	}
-
-	return args
-}
-
 func main() {
-	var cmd *exec.Cmd
-	var wg sync.WaitGroup
-
 	log.SetFlags(0)
 	args := parseFlags()
 
@@ -135,10 +90,9 @@ func main() {
 		return
 	}
 
-	command := args[0]
-
 	monitoringEvent = opts.MonitoringEvent
 	if monitoringEvent == "" {
+		command := args[0]
 		// event for command /path/check_foo.sh will be check_foo
 		monitoringEvent = filepath.Base(command)
 		if ext := filepath.Ext(command); ext != "" {
@@ -154,70 +108,26 @@ func main() {
 
 	loadMonitoringCommands()
 
-	// FIXME(nightlyone) try two intervals instead of one?
-	timer := time.AfterFunc(opts.Timeout, func() {
-		TimedOut()
-		if cmd != nil && cmd.Process != nil {
-			cmd.Process.Kill()
-			// FIXME(nightlyone) log the kill
-		}
-		os.Exit(0)
-	})
-
-	SpreadWait(opts.MaxDelay)
-
-	lock, err := createLock(opts.KillRunning)
-	if err != nil {
-		timer.Stop()
-		LockError(err)
-		return
-	}
-	defer lock.Unlock()
-
-	cmd = exec.Command(command, args[1:]...)
-
-	if !opts.NoPipeStdout {
-		stdout, err := cmd.StdoutPipe()
-		if err != nil {
-			log.Fatal(err)
-		}
-		if opts.WrapNagiosPlugin {
-			firstbytes = NewCapWriter(8192)
-			stdout := io.TeeReader(stdout, firstbytes)
-			logStream(stdout, logger, &wg)
-		} else {
-			logStream(stdout, logger, &wg)
-		}
-	} else if opts.WrapNagiosPlugin {
-		stdout, err := cmd.StdoutPipe()
-		if err != nil {
-			log.Fatal(err)
-		}
-		firstbytes = NewCapWriter(8192)
-		logStream(stdout, firstbytes, &wg)
-	}
-
-	if !opts.NoPipeStderr {
-		stderr, err := cmd.StderrPipe()
-		if err != nil {
-			log.Fatal(err)
-		}
-		logStream(stderr, logger, &wg)
-	}
-
-	if err := cmd.Start(); err != nil {
-		timer.Stop()
-		NotAvailable(err)
-		return
-	}
-
-	wg.Wait()
-
-	if err := cmd.Wait(); err != nil {
-		timer.Stop()
-		Failed(err)
-	} else {
-		timer.Stop()
+	err = CoreLoop(args, logger)
+	if err == nil {
+		// best case
 		Ok()
+	} else {
+		// now handle any errors
+		switch e := err.(type) {
+		case *TimeoutError:
+			TimedOut(e)
+		case *NotAvailableError:
+			NotAvailable(e)
+		case *StartupError:
+			NotAvailable(e)
+		case *exec.ExitError:
+			Failed(e)
+		case *LockError:
+			Locked(e)
+		default:
+			// is unknown error really a fail? Shouldn't happend anyway!
+			Failed(e)
+		}
 	}
 }
