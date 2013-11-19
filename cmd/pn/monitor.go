@@ -25,6 +25,13 @@ const (
 
 /* return codes besides Sucess and failure are unix specific, so only use there */
 func error2exit(err error) (monitoringResult, string) {
+	monitoringCodes := map[monitoringResult][]uint8{
+		monitorOk:       opts.MonitorOk,
+		monitorWarning:  opts.MonitorWarning,
+		monitorCritical: opts.MonitorCritical,
+		monitorUnknown:  opts.MonitorUnknown,
+		monitorDebug:    nil,
+	}
 	if err == nil {
 		return monitorOk, "OK"
 	}
@@ -37,9 +44,13 @@ func error2exit(err error) (monitoringResult, string) {
 	if !ok {
 		return monitorUnknown, err.Error()
 	}
-	switch exitstate.ExitStatus() {
-	case 0, 1, 2, 3:
-		return monitoringResult(exitstate.ExitStatus()), err.Error()
+	status := uint8(exitstate.ExitStatus())
+	for severity, filter := range monitoringCodes {
+		for _, code := range filter {
+			if status == code {
+				return severity, err.Error()
+			}
+		}
 	}
 	return monitorUnknown, err.Error()
 }

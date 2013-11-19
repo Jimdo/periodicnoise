@@ -18,6 +18,10 @@ var opts struct {
 	KillRunning      bool          `short:"k" long:"kill-running" description:"kill already running instance of command"`
 	NoMonitoring     bool          `long:"no-monitoring" description:"wrap command without sending monitoring events"`
 	GraceTime        time.Duration `long:"grace-time" default:"10s" description:"time left until TIMEOUT, before sending SIGTERM to command, e.g. 45s, 2m, 1h30m"`
+	MonitorOk        []uint8       `long:"monitor-ok" description:"add exit code to consider as no failure."`
+	MonitorWarning   []uint8       `long:"monitor-warning" description:"add exit code to warn about"`
+	MonitorCritical  []uint8       `long:"monitor-critical" description:"add exit code to consider as critical failure"`
+	MonitorUnknown   []uint8       `long:"monitor-unknown" description:"add exit code to consider as state not known"`
 }
 
 type FlagConstraintError struct {
@@ -33,6 +37,44 @@ func validateOptionConstraints() error {
 		return &FlagConstraintError{Constraint: "max delay >= timeout, no time left for actual command execution"}
 	}
 
+	// setup defaults
+	monitoringCodes := map[monitoringResult][]uint8{
+		monitorOk:       opts.MonitorOk,
+		monitorWarning:  opts.MonitorWarning,
+		monitorCritical: opts.MonitorCritical,
+		monitorUnknown:  opts.MonitorUnknown,
+		monitorDebug:    nil,
+	}
+
+	// Setup constraint that exit code 0 is ALWAYS considered ok ...
+	unique := map[uint8]monitoringResult{
+		uint8(monitorOk): monitorOk,
+	}
+
+	// ... and check for duplicate definitions of severity <=> exit code mappings.
+	for severity, filter := range monitoringCodes {
+		for _, code := range filter {
+			if duplicate, exists := unique[code]; exists && duplicate != severity {
+				return &FlagConstraintError{
+					Constraint: fmt.Sprintf("exit code %d is already considered %s instead of %s",
+						code, monitoringResults[duplicate], monitoringResults[severity]),
+				}
+			} else {
+				unique[code] = severity
+			}
+		}
+	}
+
+	// check for identity mappings (ok == monitorOk is enforced above)
+	if _, exists := unique[uint8(monitorWarning)]; !exists {
+		opts.MonitorWarning = append(opts.MonitorWarning, uint8(monitorWarning))
+	}
+	if _, exists := unique[uint8(monitorCritical)]; !exists {
+		opts.MonitorCritical = append(opts.MonitorCritical, uint8(monitorCritical))
+	}
+	if _, exists := unique[uint8(monitorUnknown)]; !exists {
+		opts.MonitorUnknown = append(opts.MonitorUnknown, uint8(monitorUnknown))
+	}
 	return nil
 }
 
