@@ -53,9 +53,31 @@ kill already running instance of command
 .TP
 \fB--no-monitoring\fP
 wrap command without sending monitoring events
+.SH LIFE CYCLE OF PERIODICNOISE
+
+.PP
+After startup, arguments are checked and periodicnoise. If argument errors arise, it terminates with an error on stderr,
+without any delay, locking or reporting to monitoring. Please test the arguments before adding the cron job or read cron mails again.
+
+Now UTC time is being measured as NOW and a deadline for execution set to now+TIMEOUT. The tool now waits a random amount of time up to MAXDELAY.
+
+Then it tries to take a event specific lock. If it doesn't get the lock, it reports a busy state as UNKNOWN to the monitoring and exits.
+Otherwise tries to execute the passed command and arguments.
+
+GRACETIME amount of time before the deadline indicated by TIMEOUT,
+it sends SIGTERM to the executed command and all its children, to let it gracefully die, if it didn't finish in time.
+
+After TIMEOUT has passed, the command and all its children receive a SIGKILL,
+which should finally get rid of them as soon as possible.
+
+Periodicnoise also collects the exit state and reports it, if it didn't kill it itself.
+
+After ensuring the child process is dead, it frees the lock and reports the results to monitoring.
+.PP
+
 .SH "FILES"
 
-.PP 
+.PP
 \fB/etc/periodicnoise/config\fP is for global settings,
 .PP
 \fB$HOME/.config/periodicnoise/config\fP for per-user settings.
