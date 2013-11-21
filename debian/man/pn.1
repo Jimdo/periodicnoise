@@ -48,6 +48,18 @@ do not stream stdout of wrapped command to log
 \fB-E, --monitor-event\fP
 monitoring event (defaults to check_foo for /path/check_foo.sh)
 .TP
+\fB--monitor-ok\fP
+add exit code to consider as no failure
+.TP
+\fB--monitor-warning\fP
+add exit code to warn about
+.TP
+\fB--monitor-critical\fP
+add exit code to consider as critical failure
+.TP
+\fB--monitor-unknown\fP
+add exit code to consider as state not known
+.TP
 \fB-k, --kill-running\fP
 kill already running instance of command
 .TP
