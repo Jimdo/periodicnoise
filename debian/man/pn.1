@@ -31,7 +31,7 @@ cleans up stale log files
 optional maximum execution start delay for command, e.g. 45s, 2m, 1h30m
 .TP
 \fB-t, --timeout\fP
-set execution timeout for command, e.g. 45s, 2m, 1h30m
+set hard execution timeout for command, e.g. 45s, 2m, 1h30m
 .TP
 \fB-s, --use-syslog\fP
 log via syslog instead of stderr
@@ -53,6 +53,9 @@ kill already running instance of command
 .TP
 \fB--no-monitoring\fP
 wrap command without sending monitoring events
+.TP
+\fB--grace-time\fP
+time left until TIMEOUT, before sending SIGTERM to command, e.g. 45s, 2m, 1h30m
 .SH LIFE CYCLE OF PERIODICNOISE
 
 .PP
