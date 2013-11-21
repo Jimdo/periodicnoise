@@ -32,18 +32,9 @@ func (c *FlagConstraintError) Error() string {
 	return fmt.Sprintf(c.Constraint)
 }
 
-func validateOptionConstraints() error {
+func validateOptionConstraints() (err error) {
 	if opts.MaxDelay >= opts.Timeout {
 		return &FlagConstraintError{Constraint: "max delay >= timeout, no time left for actual command execution"}
-	}
-
-	// setup defaults
-	monitoringCodes := map[monitoringResult][]uint8{
-		monitorOk:       opts.MonitorOk,
-		monitorWarning:  opts.MonitorWarning,
-		monitorCritical: opts.MonitorCritical,
-		monitorUnknown:  opts.MonitorUnknown,
-		monitorDebug:    nil,
 	}
 
 	// Setup constraint that exit code 0 is ALWAYS considered ok ...
@@ -52,18 +43,18 @@ func validateOptionConstraints() error {
 	}
 
 	// ... and check for duplicate definitions of severity <=> exit code mappings.
-	for severity, filter := range monitoringCodes {
-		for _, code := range filter {
-			if duplicate, exists := unique[code]; exists && duplicate != severity {
-				return &FlagConstraintError{
-					Constraint: fmt.Sprintf("exit code %d is already considered %s instead of %s",
-						code, monitoringResults[duplicate], monitoringResults[severity]),
-				}
-			} else {
-				unique[code] = severity
+	ForEachResultMapping(func(severity monitoringResult, code uint8) bool {
+		if duplicate, exists := unique[code]; exists && duplicate != severity {
+			err = &FlagConstraintError{
+				Constraint: fmt.Sprintf("exit code %d is already considered %s instead of %s",
+					code, monitoringResults[duplicate], monitoringResults[severity]),
 			}
+			return false
+		} else {
+			unique[code] = severity
+			return true
 		}
-	}
+	})
 
 	// check for identity mappings (ok == monitorOk is enforced above)
 	if _, exists := unique[uint8(monitorWarning)]; !exists {
@@ -75,7 +66,7 @@ func validateOptionConstraints() error {
 	if _, exists := unique[uint8(monitorUnknown)]; !exists {
 		opts.MonitorUnknown = append(opts.MonitorUnknown, uint8(monitorUnknown))
 	}
-	return nil
+	return err
 }
 
 func parseFlags() ([]string, error) {
