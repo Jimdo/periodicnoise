@@ -59,23 +59,29 @@ time left until TIMEOUT, before sending SIGTERM to command, e.g. 45s, 2m, 1h30m
 .SH LIFE CYCLE OF PERIODICNOISE
 
 .PP
-After startup, arguments are checked and periodicnoise. If argument errors arise, it terminates with an error on stderr,
-without any delay, locking or reporting to monitoring. Please test the arguments before adding the cron job or read cron mails again.
+After startup, arguments are checked. If argument errors arise, periodicnoise
+terminates with an error on stderr, without any delay, locking or reporting to
+monitoring. Please test the arguments before adding the cron job or read cron
+mails again.
 
-Now UTC time is being measured as NOW and a deadline for execution set to now+TIMEOUT. The tool now waits a random amount of time up to MAXDELAY.
+The deadline for execution is set to CURRENT_TIME + TIMEOUT. The tool now waits 
+for a random amount of time up to MAX_START_DELAY.
 
-Then it tries to take a event specific lock. If it doesn't get the lock, it reports a busy state as UNKNOWN to the monitoring and exits.
-Otherwise tries to execute the passed command and arguments.
+Then it tries to take a event specific lock. If it doesn't get the lock, it
+reports a busy state as UNKNOWN to the monitoring and exits. Otherwise it tries
+to execute the passed command and arguments.
 
-GRACETIME amount of time before the deadline indicated by TIMEOUT,
-it sends SIGTERM to the executed command and all its children, to let it gracefully die, if it didn't finish in time.
+GRACETIME is the amount of time before the deadline indicated by TIMEOUT. 
+Then periodicnoise sends SIGTERM to the executed command and all its children, 
+to let the child program gracefully die, if it didn't finish in time.
 
 After TIMEOUT has passed, the command and all its children receive a SIGKILL,
 which should finally get rid of them as soon as possible.
 
-Periodicnoise also collects the exit state and reports it, if it didn't kill it itself.
+If periodicnoise didn't kill the program itself, it also reports the exit state.
 
-After ensuring the child process is dead, it frees the lock and reports the results to monitoring.
+After ensuring the child process is dead, it frees the lock and reports the results 
+to monitoring.
 .PP
 
 .SH "FILES"
