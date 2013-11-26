@@ -61,14 +61,22 @@ func CoreLoop(args []string, logger io.Writer) error {
 	// hardlimit provides a hard deadline, after which cmd will not run anymore
 	hardlimit := time.NewTimer(opts.Timeout - time.Since(now))
 
+	//softlimit provides a softer deadline, after which cmd will by signalled,
+	//but has a chance to catch the signal
+	softlimit := time.NewTimer(opts.Timeout - time.Since(now) - opts.GraceTime)
+	if opts.GraceTime == 0 || opts.GraceTime >= opts.Timeout {
+		softlimit = disableTimer(softlimit)
+	}
+
 	sigc := ReceiveDeadlySignals()
 	defer IgnoreDeadlySignals(sigc)
 
 	for errc != nil {
 		select {
 		case signal := <-sigc:
-			// clear timer
+			// clear timers
 			hardlimit = disableTimer(hardlimit)
+			softlimit = disableTimer(softlimit)
 			log.Println("INFO: Received signal", signal)
 
 			if grp, _ := ProcessGroup(cmd.Process); KillProcess(grp) == nil {
@@ -104,6 +112,7 @@ func CoreLoop(args []string, logger io.Writer) error {
 			}
 			// cancel timers, but collect return code from error channel in next iteration
 			hardlimit = disableTimer(hardlimit)
+			softlimit = disableTimer(softlimit)
 
 			// block signals, since we exit anyway now
 			sigc = nil
@@ -113,6 +122,28 @@ func CoreLoop(args []string, logger io.Writer) error {
 				log.Println("INFO: Killed process tree")
 			} else if KillProcess(cmd.Process) == nil {
 				log.Println("INFO: Killed process")
+			} else {
+				// very fishy, should never get here, but we still handle that crap. Better Fatal exit?
+				log.Println("FATAL: Timeout before the process even started? Please increase the timeout!")
+
+				// and we are done here, so terminate the loop
+				errc = nil
+			}
+		case timeo := <-timerChannel(softlimit):
+			// report error, since we DID timeout already
+			err = &TimeoutError{
+				soft:  true,
+				after: timeo.Sub(now),
+			}
+
+			// cancel soft timer, but keep rest intact
+			softlimit = disableTimer(softlimit)
+
+			// now terminate process tree, if it exists
+			if grp, _ := ProcessGroup(cmd.Process); TerminateProcess(grp) == nil {
+				log.Println("INFO: Terminated process tree")
+			} else if TerminateProcess(cmd.Process) == nil {
+				log.Println("INFO: Terminated process")
 			} else {
 				// very fishy, should never get here, but we still handle that crap. Better Fatal exit?
 				log.Println("FATAL: Timeout before the process even started? Please increase the timeout!")

@@ -25,11 +25,16 @@ func (e *NotAvailableError) Error() string {
 }
 
 type TimeoutError struct {
+	soft  bool
 	after time.Duration
 }
 
 func (e *TimeoutError) Error() string {
-	return fmt.Sprintf("Hard timeout after %s, killed with %s", e.after, os.Kill)
+	if e.soft {
+		return fmt.Sprintf("Soft timeout after %s, killed with %s", e.after, GracefulSignal)
+	} else {
+		return fmt.Sprintf("Hard timeout after %s, killed with %s", e.after, os.Kill)
+	}
 }
 
 type LockError struct {

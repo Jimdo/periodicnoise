@@ -31,7 +31,7 @@ cleans up stale log files
 optional maximum execution start delay for command, e.g. 45s, 2m, 1h30m
 .TP
 \fB-t, --timeout\fP
-set execution timeout for command, e.g. 45s, 2m, 1h30m
+set hard execution timeout for command, e.g. 45s, 2m, 1h30m
 .TP
 \fB-s, --use-syslog\fP
 log via syslog instead of stderr
@@ -53,14 +53,45 @@ kill already running instance of command
 .TP
 \fB--no-monitoring\fP
 wrap command without sending monitoring events
+.TP
+\fB--grace-time\fP
+time left until TIMEOUT, before sending SIGTERM to command, e.g. 45s, 2m, 1h30m
+.SH LIFE CYCLE OF PERIODICNOISE
+
+.PP
+After startup, arguments are checked. If argument errors arise, periodicnoise
+terminates with an error on stderr, without any delay, locking or reporting to
+monitoring. Please test the arguments before adding the cron job or read cron
+mails again.
+
+The deadline for execution is set to CURRENT_TIME + TIMEOUT. The tool now waits 
+for a random amount of time up to MAX_START_DELAY.
+
+Then it tries to take a event specific lock. If it doesn't get the lock, it
+reports a busy state as UNKNOWN to the monitoring and exits. Otherwise it tries
+to execute the passed command and arguments.
+
+GRACETIME is the amount of time before the deadline indicated by TIMEOUT. 
+Then periodicnoise sends SIGTERM to the executed command and all its children, 
+to let the child program gracefully die, if it didn't finish in time.
+
+After TIMEOUT has passed, the command and all its children receive a SIGKILL,
+which should finally get rid of them as soon as possible.
+
+If periodicnoise didn't kill the program itself, it also reports the exit state.
+
+After ensuring the child process is dead, it frees the lock and reports the results 
+to monitoring.
+.PP
+
 .SH "FILES"
 
-.PP 
+.PP
 \fB/etc/periodicnoise/config\fP is for global settings,
 .PP
 \fB$HOME/.config/periodicnoise/config\fP for per-user settings.
 Per user settings overwrite global settings for this user. These files are in ini style.
-.PP 
+.PP
 
 .PP
 Currently there is only a monitoring section defined, where you can define commands triggered by various results of the execution.
@@ -68,21 +99,21 @@ Currently there is only a monitoring section defined, where you can define comma
 
 .SH "SEE ALSO"
 
-.PP 
+.PP
 \fBcron\fP(8)
-.PP 
+.PP
 .SH "THANKS"
 
-.PP 
+.PP
 Thanks to S\(:o\&nke R\(:u\&mpler and Deniz Adrian for evangelizing usage of this tool.
 .PP
 Special thanks to Daniel Bonkowksi for puppet integration
-.PP 
+.PP
 .SH "AUTHOR"
 
-.PP 
+.PP
 periodicnoise was originally hacked together by Ingo Oeser and later refined
 and heavily extended by Mathias Lafeldt
-.PP 
-Sources are available at https://github.com/Jimdo/periodicnoise 
+.PP
+Sources are available at https://github.com/Jimdo/periodicnoise
 and a useful puppet module for it is available at https://github.com/Jimdo/puppet-periodicnoise
