@@ -83,7 +83,12 @@ var firstbytes *CapWriter
 
 func main() {
 	log.SetFlags(0)
-	args := parseFlags()
+	args, e := parseFlags()
+
+	if e != nil {
+		log.Fatal("FATAL: invalid arguments, %s", e)
+		return
+	}
 
 	// exit program after --help
 	if len(args) == 0 {

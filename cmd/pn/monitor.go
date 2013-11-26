@@ -23,6 +23,26 @@ const (
 	monitorFirst = monitorOk
 )
 
+// ForEachResultMapping iterate through the set of exit-code <=> monitoring severity mapping,
+// calling the visitor function with each severity and code combination at least once.
+// If visitor returns false, the iteration will be aborted.
+func ForEachResultMapping(visitor func(severity monitoringResult, code uint8) bool) {
+	monitoringCodes := map[monitoringResult][]uint8{
+		monitorOk:       opts.MonitorOk,
+		monitorWarning:  opts.MonitorWarning,
+		monitorCritical: opts.MonitorCritical,
+		monitorUnknown:  opts.MonitorUnknown,
+		monitorDebug:    nil,
+	}
+	for severity, filter := range monitoringCodes {
+		for _, code := range filter {
+			if !visitor(severity, code) {
+				return
+			}
+		}
+	}
+}
+
 /* return codes besides Sucess and failure are unix specific, so only use there */
 func error2exit(err error) (monitoringResult, string) {
 	if err == nil {
@@ -37,11 +57,17 @@ func error2exit(err error) (monitoringResult, string) {
 	if !ok {
 		return monitorUnknown, err.Error()
 	}
-	switch exitstate.ExitStatus() {
-	case 0, 1, 2, 3:
-		return monitoringResult(exitstate.ExitStatus()), err.Error()
-	}
-	return monitorUnknown, err.Error()
+	status := uint8(exitstate.ExitStatus())
+	result := monitorUnknown
+
+	ForEachResultMapping(func(severity monitoringResult, code uint8) bool {
+		if status == code {
+			result = severity
+			return false
+		}
+		return true
+	})
+	return result, err.Error()
 }
 
 var monitoringResults = map[monitoringResult]string{
