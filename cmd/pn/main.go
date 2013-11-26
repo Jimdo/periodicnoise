@@ -86,7 +86,7 @@ func main() {
 	args, e := parseFlags()
 
 	if e != nil {
-		log.Fatal("FATAL: invalid arguments, %s", e)
+		log.Fatalf("FATAL: invalid arguments, %s", e)
 		return
 	}
 
