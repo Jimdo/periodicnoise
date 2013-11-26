@@ -1,3 +1,15 @@
+periodicnoise (0.12) saucy; urgency=low
+
+  * reworked core logic
+  * Handle deadly signals
+  * kill the whole child process group
+  * Implement --grace-time parameter
+  * Explain life cycle of wrapped commands and pn in man-page
+  * avoid duplicate newlines
+  * implement exit code remapping option
+
+ -- Ingo Oeser <ingo@jimdo.com>  Tue, 26 Nov 2013 17:26:37 +0100
+
 periodicnoise (0.11) unstable; urgency=low
 
   * Add timeouts for syslog
