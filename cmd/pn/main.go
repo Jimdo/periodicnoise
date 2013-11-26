@@ -37,7 +37,7 @@ func Ok() {
 // NotAvailable states that the command could not be started successfully. It
 // might not be installed or has other problems.
 func NotAvailable(err error) {
-	s := fmt.Sprintln("Cannot start command: ", err)
+	s := fmt.Sprint("Cannot start command: ", err)
 	log.Println("FATAL:", s)
 	monitor(monitorUnknown, s)
 }
@@ -45,7 +45,7 @@ func NotAvailable(err error) {
 // TimedOut states that the command took too long and reports failure to the
 // monitoring.
 func TimedOut(err error) {
-	s := fmt.Sprintln(err)
+	s := fmt.Sprint(err)
 	log.Println("FATAL:", s)
 	monitor(monitorCritical, s)
 }
@@ -74,7 +74,7 @@ func Failed(err error) {
 
 // Locked states that we could not get the lock.
 func Locked(err error) {
-	s := fmt.Sprintln("Failed to get lock: ", err)
+	s := fmt.Sprint("Failed to get lock: ", err)
 	log.Println("FATAL:", s)
 	monitor(monitorCritical, s)
 }
