@@ -3,23 +3,9 @@ package main
 import (
 	"fmt"
 	"log"
-	"math/rand"
-	"os"
 	"os/exec"
 	"path/filepath"
-	"time"
 )
-
-// Avoid thundering herd problem on remote services used by this command.
-// maxDelay will be 0 if this is not an issue.
-func SpreadWait(maxDelay time.Duration) {
-	if maxDelay > 0 {
-		// Seed random generator with current process ID
-		rand.Seed(int64(os.Getpid()))
-		// Sleep for random amount of time within maxDelay
-		time.Sleep(time.Duration(rand.Int63n(int64(maxDelay))))
-	}
-}
 
 // Ok states that execution went well. Logs debug output and reports ok to
 // monitoring.

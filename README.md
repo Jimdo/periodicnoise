@@ -4,7 +4,7 @@ periodicnoise
 NOTE: Work in progress at the moment.
 
 Powerful wrapper for periodic tasks (e.g. controlled by cron), which:
- * spreads the start of it within a random interval, if executed on many machines
+ * scatters the start of it within a random interval, if executed on many machines
  * reports results to your logging system
  * reports state of execution (busy, failure, ok) to your monitoring system
  * skips execution, if a previous execution is still running, reporting this fact
@@ -91,14 +91,14 @@ BSD
 documentation
 =============
 
-Instead of writing logging, locking, timeout and load spreading scripts at the 4th company now,
+Instead of writing logging, locking, timeout and load scattering scripts at the 4th company now,
 I decided to build an open source tool for it.
 
 problems to be solved
 ---------------------
- * Spreads the start of it within a random interval, if executed on many machines.
+ * Scatters the start of it within a random interval, if executed on many machines.
    This ensures central services, we report to, are not overloaded with a spiky load.
-   Spreading is by 10% of execution interval by default. So in a 10min execution interval
+   Scattering is by 10% of execution interval by default. So in a 10min execution interval
    the start time for the command to be executed is delayed between 0 and 1 minute.
  * Reports results to your logging system.
    Script results (stderr or stdout and stderr combined) will be collected and reported

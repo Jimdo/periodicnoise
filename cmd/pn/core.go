@@ -3,6 +3,8 @@ package main
 import (
 	"io"
 	"log"
+	"math/rand"
+	"os"
 	"os/exec"
 	"sync"
 	"time"
@@ -23,6 +25,17 @@ func disableTimer(timer *time.Timer) *time.Timer {
 	return nil
 }
 
+// Avoid thundering herd problem on remote services used by this command.
+// maxDelay will be 0 if this is not an issue.
+func ScatterWait(maxDelay time.Duration) {
+	if maxDelay > 0 {
+		// Seed random generator with current process ID
+		rand.Seed(int64(os.Getpid()))
+		// Sleep for random amount of time within maxDelay
+		time.Sleep(time.Duration(rand.Int63n(int64(maxDelay))))
+	}
+}
+
 // CoreLoop handles the core logic of our tool,
 // Which is:
 //  * wait a random amount of time
@@ -37,7 +50,7 @@ func CoreLoop(args []string, logger io.Writer) error {
 	var wg sync.WaitGroup
 
 	now := time.Now()
-	SpreadWait(opts.MaxDelay)
+	ScatterWait(opts.MaxDelay)
 
 	lock, err := createLock(opts.KillRunning)
 	if err != nil {
