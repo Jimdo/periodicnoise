@@ -24,6 +24,7 @@ var opts struct {
 	MonitorUnknown   []uint8       `long:"monitor-unknown" description:"add exit code to consider as state not known"`
 }
 
+// FlagConstraintError happens when command line arguments make no sense or contradict each other
 type FlagConstraintError struct {
 	Constraint string
 }
@@ -50,10 +51,9 @@ func validateOptionConstraints() (err error) {
 					code, monitoringResults[duplicate], monitoringResults[severity]),
 			}
 			return false
-		} else {
-			unique[code] = severity
-			return true
 		}
+		unique[code] = severity
+		return true
 	})
 
 	// check for identity mappings (ok == monitorOk is enforced above)
@@ -80,9 +80,8 @@ func parseFlags() ([]string, error) {
 		// --help is not an error
 		if e, ok := err.(*flags.Error); ok && e.Type == flags.ErrHelp {
 			return nil, nil
-		} else {
-			return nil, err
 		}
+		return nil, err
 	}
 
 	if len(args) < 1 {

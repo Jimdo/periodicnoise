@@ -7,8 +7,12 @@ import (
 	"path/filepath"
 )
 
-var ErrNeedDirectory = errors.New("Lockfile directory not a directory")
-var ErrNotExclusive = errors.New("Lockfile directory not owned exclusively")
+// ErrNeedDirectory means the directory for the lock file actualy not a directory.
+var ErrNeedDirectory = errors.New("lockfile directory not a directory")
+
+// ErrNotExclusive means the directory for the lock file is not owned exclusively
+// by the requester and thus vulnerable to symlink attacks.
+var ErrNotExclusive = errors.New("lockfile directory not owned exclusively")
 
 // create attack safe private directory
 // if file creation fails there, then you there is only an ownership problem

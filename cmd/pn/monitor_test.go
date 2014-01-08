@@ -7,7 +7,7 @@ import (
 	"testing"
 )
 
-func setup_monitoringCalls() {
+func setupMonitoringCalls() {
 	monitoringCalls = map[monitoringResult]string{
 		monitorOk:       `printf "somehost.example.com;%(event);0;%(message)\n" |/usr/sbin/send_nsca -H nagios.example.com -d ";"`,
 		monitorWarning:  `printf "somehost.example.com;%(event);1;%(message)\n" |/usr/sbin/send_nsca -H nagios.example.com -d ";"`,
@@ -26,7 +26,7 @@ func TestMonitorOk(t *testing.T) {
 		commander = oldCommander
 	}()
 
-	setup_monitoringCalls()
+	setupMonitoringCalls()
 	monitoringEvent = "tests"
 	ce := &mockCommanderExecutor{
 		want: `/bin/sh -c printf "somehost.example.com;tests;0;OK\n" |/usr/sbin/send_nsca -H nagios.example.com -d ";"`,
@@ -53,7 +53,7 @@ func TestNoMonitoring(t *testing.T) {
 		opts = oldOpts
 	}()
 
-	setup_monitoringCalls()
+	setupMonitoringCalls()
 	opts.NoMonitoring = true
 	monitoringEvent = "tests"
 	ce := &mockCommanderExecutor{}
