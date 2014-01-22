@@ -49,7 +49,7 @@ func Busy() {
 func Failed(err error) {
 	var message string
 	code, s := error2exit(err)
-	log.Println("FATAL:", s)
+	log.Printf("INFO: %s (considered %s for monitoring)\n", s, code)
 	if firstbytes == nil {
 		message = s
 	} else {
