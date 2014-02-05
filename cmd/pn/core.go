@@ -11,11 +11,10 @@ import (
 )
 
 func timerChannel(timer *time.Timer) <-chan time.Time {
-	if timer == nil {
-		return nil
-	} else {
+	if timer != nil {
 		return timer.C
 	}
+	return nil
 }
 
 func disableTimer(timer *time.Timer) *time.Timer {
@@ -25,8 +24,9 @@ func disableTimer(timer *time.Timer) *time.Timer {
 	return nil
 }
 
-// Avoid thundering herd problem on remote services used by this command.
-// maxDelay will be 0 if this is not an issue.
+// ScatterWait avoids the thundering herd problem
+// on remote services used by this command.
+// Set maxDelay to 0, if this is not an issue.
 func ScatterWait(maxDelay time.Duration) {
 	if maxDelay > 0 {
 		// Seed random generator with current process ID

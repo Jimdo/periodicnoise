@@ -31,14 +31,14 @@ func getLogger(useSyslog bool) (logger io.Writer, err error) {
 	return &LineWriter{w: logger}, err
 }
 
-func canContinue(expire time.Time, had_progress bool, err error) bool {
+func canContinue(expire time.Time, progressed bool, err error) bool {
 	if time.Now().After(expire) {
 		return false
 	}
 
 	if netErr, ok := err.(net.Error); ok && (netErr.Temporary() || netErr.Timeout()) {
 		return true
-	} else if opErr, ok := err.(*net.OpError); ok && had_progress {
+	} else if opErr, ok := err.(*net.OpError); ok && progressed {
 		if errno, ok := opErr.Err.(syscall.Errno); ok {
 			// These are only temporary errors, if we could ever connect.
 			// If we could never connect, we cannot decide, whether this is a temporary failure,

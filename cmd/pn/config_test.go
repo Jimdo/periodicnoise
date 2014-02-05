@@ -30,9 +30,9 @@ func TestHasMonitoringCommands(t *testing.T) {
 
 	for result := range monitoringResults {
 		cmd, _ := config.GetString("monitoring", result.String())
-		want_cmd := makeMonitoringCommand(result)
-		if cmd != want_cmd {
-			t.Errorf("got %s, want %s", cmd, want_cmd)
+		want := makeMonitoringCommand(result)
+		if cmd != want {
+			t.Errorf("got %s, want %s", cmd, want)
 			return
 		}
 	}
@@ -43,9 +43,9 @@ func TestLoadsMonitoringCommands(t *testing.T) {
 
 	for result := range monitoringResults {
 		cmd := monitoringCalls[result]
-		want_cmd := makeMonitoringCommand(result)
-		if cmd != want_cmd {
-			t.Errorf("got %s, want %s", cmd, want_cmd)
+		want := makeMonitoringCommand(result)
+		if cmd != want {
+			t.Errorf("got %s, want %s", cmd, want)
 			return
 		}
 	}

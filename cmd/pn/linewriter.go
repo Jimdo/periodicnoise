@@ -5,6 +5,7 @@ import (
 	"io"
 )
 
+// LineWriter is an io.Writer that will pass on line breaks as message boundaries.
 type LineWriter struct {
 	w io.Writer
 }

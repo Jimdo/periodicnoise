@@ -117,11 +117,12 @@ func monitor(state monitoringResult, message string) {
 	}
 }
 
-// infrastructure for dependency injection for os.exec Command and run
+// Executor provides infrastructure for dependency injection for os.exec Command and run
 type Executor interface {
 	Run() error
 }
 
+// Commander provides infrastructure for dependency injection for os.exec Command and run
 type Commander interface {
 	Command(name string, args ...string) Executor
 }
