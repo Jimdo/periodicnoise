@@ -10,7 +10,71 @@ import (
 	flags "github.com/jessevdk/go-flags"
 )
 
-func TestCoreLoopExitSuccess(t *testing.T) {
+func TestCoreLoopRetryExitSuccess(t *testing.T) {
+	oldopts := opts
+	defer func() { opts = oldopts }()
+
+	arguments := "--retries=3 -- true"
+	args, err := flags.ParseArgs(&opts, strings.Fields(arguments))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	var output bytes.Buffer
+	log.SetOutput(&output)
+
+	err = CoreLoopRetry(args, &bytes.Buffer{})
+	t.Log(output.String())
+	if err != nil {
+		t.Error("want no error, got", err)
+	}
+}
+
+func TestCoreLoopRetryExitSuccessFunnyExitCodes(t *testing.T) {
+	oldopts := opts
+	defer func() { opts = oldopts }()
+
+	arguments := "--retries=3 --monitor-ok=1 -- false"
+	args, err := flags.ParseArgs(&opts, strings.Fields(arguments))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	var output bytes.Buffer
+	log.SetOutput(&output)
+
+	err = CoreLoopRetry(args, &bytes.Buffer{})
+	t.Log(output.String())
+	if err != nil {
+		t.Error("want no error, got", err)
+	}
+}
+
+func TestCoreLoopRetryExitError(t *testing.T) {
+	oldopts := opts
+	defer func() { opts = oldopts }()
+
+	arguments := "--retries=3 -- false"
+	args, err := flags.ParseArgs(&opts, strings.Fields(arguments))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	var output bytes.Buffer
+	log.SetOutput(&output)
+
+	err = CoreLoopRetry(args, &bytes.Buffer{})
+	t.Log(output.String())
+	if err == nil {
+		t.Error("want error, got nil")
+	} else if _, ok := err.(*exec.ExitError); ok {
+		t.Log("got", err)
+	} else {
+		t.Error("want exit error, got", err)
+	}
+}
+
+func TestCoreLoopOnceExitSuccess(t *testing.T) {
 	oldopts := opts
 	defer func() { opts = oldopts }()
 
@@ -23,14 +87,14 @@ func TestCoreLoopExitSuccess(t *testing.T) {
 	var output bytes.Buffer
 	log.SetOutput(&output)
 
-	err = CoreLoop(args, &bytes.Buffer{})
+	err = CoreLoopOnce(args, &bytes.Buffer{})
 	t.Log(output.String())
 	if err != nil {
 		t.Error("want no error, got", err)
 	}
 }
 
-func TestCoreLoopExitError(t *testing.T) {
+func TestCoreLoopOnceExitError(t *testing.T) {
 	oldopts := opts
 	defer func() { opts = oldopts }()
 
@@ -43,7 +107,7 @@ func TestCoreLoopExitError(t *testing.T) {
 	var output bytes.Buffer
 	log.SetOutput(&output)
 
-	err = CoreLoop(args, &bytes.Buffer{})
+	err = CoreLoopOnce(args, &bytes.Buffer{})
 	t.Log(output.String())
 	if err == nil {
 		t.Error("want error, got nil")
@@ -54,7 +118,7 @@ func TestCoreLoopExitError(t *testing.T) {
 	}
 }
 
-func TestCoreLoopWrongCommand(t *testing.T) {
+func TestCoreLoopOnceWrongCommand(t *testing.T) {
 	oldopts := opts
 	defer func() { opts = oldopts }()
 
@@ -67,7 +131,7 @@ func TestCoreLoopWrongCommand(t *testing.T) {
 	var output bytes.Buffer
 	log.SetOutput(&output)
 
-	err = CoreLoop(args, &bytes.Buffer{})
+	err = CoreLoopOnce(args, &bytes.Buffer{})
 	t.Log(output.String())
 	if err == nil {
 		t.Error("want error, got nil")
@@ -78,7 +142,7 @@ func TestCoreLoopWrongCommand(t *testing.T) {
 	}
 }
 
-func TestCoreLoopHardTimeout(t *testing.T) {
+func TestCoreLoopOnceHardTimeout(t *testing.T) {
 	oldopts := opts
 	defer func() { opts = oldopts }()
 
@@ -91,7 +155,7 @@ func TestCoreLoopHardTimeout(t *testing.T) {
 	var output bytes.Buffer
 	log.SetOutput(&output)
 
-	err = CoreLoop(args, &bytes.Buffer{})
+	err = CoreLoopOnce(args, &bytes.Buffer{})
 	t.Log(output.String())
 	if err == nil {
 		t.Error("want error, got nil")
@@ -102,7 +166,7 @@ func TestCoreLoopHardTimeout(t *testing.T) {
 	}
 }
 
-func TestCoreLoopSoftTimeout(t *testing.T) {
+func TestCoreLoopOnceSoftTimeout(t *testing.T) {
 	oldopts := opts
 	defer func() { opts = oldopts }()
 
@@ -115,7 +179,7 @@ func TestCoreLoopSoftTimeout(t *testing.T) {
 	var output bytes.Buffer
 	log.SetOutput(&output)
 
-	err = CoreLoop(args, &bytes.Buffer{})
+	err = CoreLoopOnce(args, &bytes.Buffer{})
 	t.Log(output.String())
 	if err == nil {
 		t.Error("want error, got nil")

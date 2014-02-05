@@ -68,6 +68,9 @@ wrap command without sending monitoring events
 .TP
 \fB--grace-time\fP
 time left until TIMEOUT, before sending SIGTERM to command, e.g. 45s, 2m, 1h30m
+.TP
+\fB--retries\fP
+how often to retry the execution, if it fails?
 .SH LIFE CYCLE OF PERIODICNOISE
 
 .PP
@@ -94,6 +97,12 @@ If periodicnoise didn't kill the program itself, it also reports the exit state.
 
 After ensuring the child process is dead, it frees the lock and reports the results 
 to monitoring.
+
+Process execution is optionally retried, if it didn't succeed and RETRIES is greater than 0.
+
+The timer for execution time is also started again with each retry. So if a program times out
+once, it has the full time available again for execution. So if you want to detect missing executions,
+the total timeout for that is defined as TIMEOUT * (RETRIES + 1)
 .PP
 
 .SH "FILES"

@@ -8,6 +8,7 @@ import (
 )
 
 var opts struct {
+	Retries          uint          `long:"retries" default:"0" description:"how often to retry the execution, if it fails"`
 	MaxDelay         time.Duration `short:"d" long:"max-start-delay" description:"optional maximum execution start delay for command, e.g. 45s, 2m, 1h30m"`
 	Timeout          time.Duration `short:"t" long:"timeout" default:"1m" description:"set hard execution timeout for command, e.g. 45s, 2m, 1h30m"`
 	UseSyslog        bool          `short:"s" long:"use-syslog" description:"log via syslog instead of stderr"`

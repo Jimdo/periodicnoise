@@ -36,7 +36,25 @@ func ScatterWait(maxDelay time.Duration) {
 	}
 }
 
-// CoreLoop handles the core logic of our tool,
+// CoreLoopRetry encapsulates retries, so flaky commands can be handled, too.
+func CoreLoopRetry(args []string, logger io.Writer) (err error) {
+	for i := uint(0); i < opts.Retries+1; i++ {
+		err = CoreLoopOnce(args, logger)
+		if err == nil {
+			return nil
+		}
+
+		// Don't retry on funky exit codes, which our user considers ok.
+		if _, ok := err.(*exec.ExitError); ok {
+			if code, _ := error2exit(err); code == monitorOk {
+				return nil
+			}
+		}
+	}
+	return err
+}
+
+// CoreLoopOnce handles the core logic of our tool,
 // Which is:
 //  * wait a random amount of time
 //  * lock top ensure single execution
@@ -46,7 +64,7 @@ func ScatterWait(maxDelay time.Duration) {
 //  * free the lock
 //  * report situation via return code
 //  * handles signals
-func CoreLoop(args []string, logger io.Writer) error {
+func CoreLoopOnce(args []string, logger io.Writer) error {
 	var wg sync.WaitGroup
 
 	now := time.Now()

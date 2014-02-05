@@ -99,7 +99,7 @@ func main() {
 
 	loadMonitoringCommands()
 
-	err = CoreLoop(args, logger)
+	err = CoreLoopRetry(args, logger)
 	if err == nil {
 		// best case
 		Ok()
