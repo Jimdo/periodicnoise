@@ -107,6 +107,8 @@ func monitor(state monitoringResult, message string) {
 	}
 
 	call = strings.Replace(call, "%(event)", shellEscape(monitoringEvent), -1)
+	call = strings.Replace(call, "%(send_to)", shellEscape(opts.SendTo), -1)
+	call = strings.Replace(call, "%(send_as)", shellEscape(opts.SendAs), -1)
 	call = strings.Replace(call, "%(state)", state.String(), -1)
 	call = strings.Replace(call, "%(message)", shellEscape(message), -1)
 	// do argument interpolation

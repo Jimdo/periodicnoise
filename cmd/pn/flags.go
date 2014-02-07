@@ -22,6 +22,8 @@ var opts struct {
 	MonitorWarning   []uint8       `long:"monitor-warning" description:"add exit code to warn about"`
 	MonitorCritical  []uint8       `long:"monitor-critical" description:"add exit code to consider as critical failure"`
 	MonitorUnknown   []uint8       `long:"monitor-unknown" description:"add exit code to consider as state not known"`
+	SendAs           string        `long:"send-as" description:"send monitoring events masquerading as this entity"`
+	SendTo           string        `long:"send-to" description:"send monitoring events to this service"`
 }
 
 // FlagConstraintError happens when command line arguments make no sense or contradict each other
