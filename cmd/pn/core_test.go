@@ -2,7 +2,9 @@ package main
 
 import (
 	"bytes"
+	"io/ioutil"
 	"log"
+	"os"
 	"os/exec"
 	"strings"
 	"testing"
@@ -71,6 +73,39 @@ func TestCoreLoopRetryExitError(t *testing.T) {
 		t.Log("got", err)
 	} else {
 		t.Error("want exit error, got", err)
+	}
+}
+
+func TestCoreLoopRetryDidRetry(t *testing.T) {
+	oldopts := opts
+	defer func() { opts = oldopts }()
+
+	statefile, err := ioutil.TempFile("./testdata", "")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	defer func() {
+		os.Remove(statefile.Name())
+		statefile.Close()
+	}()
+
+	arguments := "--retries=3 -- ./testdata/works-after-two-failures.sh " + statefile.Name()
+	args, err := flags.ParseArgs(&opts, strings.Fields(arguments))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	var output bytes.Buffer
+	var logstream bytes.Buffer
+
+	log.SetOutput(&output)
+
+	err = CoreLoopRetry(args, &logstream)
+	t.Log(output.String())
+	t.Log(logstream.String())
+	if err != nil {
+		t.Error("want no error, got", err)
 	}
 }
 
