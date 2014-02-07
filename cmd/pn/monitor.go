@@ -58,7 +58,10 @@ func error2exit(err error) (monitoringResult, string) {
 		return monitorUnknown, err.Error()
 	}
 	status := uint8(exitstate.ExitStatus())
-	result := monitorUnknown
+	result := monitorCritical
+	if opts.WrapNagiosPlugin {
+		result = monitorUnknown
+	}
 
 	ForEachResultMapping(func(severity monitoringResult, code uint8) bool {
 		if status == code {

@@ -57,15 +57,17 @@ func validateOptionConstraints() (err error) {
 		return true
 	})
 
-	// check for identity mappings (ok == monitorOk is enforced above)
-	if _, exists := unique[uint8(monitorWarning)]; !exists {
-		opts.MonitorWarning = append(opts.MonitorWarning, uint8(monitorWarning))
-	}
-	if _, exists := unique[uint8(monitorCritical)]; !exists {
-		opts.MonitorCritical = append(opts.MonitorCritical, uint8(monitorCritical))
-	}
-	if _, exists := unique[uint8(monitorUnknown)]; !exists {
-		opts.MonitorUnknown = append(opts.MonitorUnknown, uint8(monitorUnknown))
+	if opts.WrapNagiosPlugin {
+		// check for identity mappings (ok == monitorOk is enforced above)
+		if _, exists := unique[uint8(monitorWarning)]; !exists {
+			opts.MonitorWarning = append(opts.MonitorWarning, uint8(monitorWarning))
+		}
+		if _, exists := unique[uint8(monitorCritical)]; !exists {
+			opts.MonitorCritical = append(opts.MonitorCritical, uint8(monitorCritical))
+		}
+		if _, exists := unique[uint8(monitorUnknown)]; !exists {
+			opts.MonitorUnknown = append(opts.MonitorUnknown, uint8(monitorUnknown))
+		}
 	}
 	return err
 }
