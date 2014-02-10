@@ -16,6 +16,73 @@ func setupMonitoringCalls() {
 	}
 }
 
+func TestMonitorFromHost(t *testing.T) {
+	oldCalls := monitoringCalls
+	oldEvent := monitoringEvent
+	oldCommander := commander
+	oldOpts := opts
+	defer func() {
+		monitoringCalls = oldCalls
+		monitoringEvent = oldEvent
+		commander = oldCommander
+		opts = oldOpts
+	}()
+
+	monitoringCalls = map[monitoringResult]string{
+		monitorOk:       `printf "%(send_as);%(event);0;%(message)\n" |/usr/sbin/send_nsca -H nagios.example.com -d ";"`,
+		monitorWarning:  `printf "%(send_as);%(event);1;%(message)\n" |/usr/sbin/send_nsca -H nagios.example.com -d ";"`,
+		monitorCritical: `printf "%(send_as);%(event);2;%(message)\n" |/usr/sbin/send_nsca -H nagios.example.com -d ";"`,
+		monitorUnknown:  `printf "%(send_as);%(event);3;%(message)\n" |/usr/sbin/send_nsca -H nagios.example.com -d ";"`,
+	}
+
+	opts.SendAs = "somehost.example.net"
+	monitoringEvent = "tests"
+	ce := &mockCommanderExecutor{
+		want: `/bin/sh -c printf "` + opts.SendAs + `;tests;0;OK\n" |/usr/sbin/send_nsca -H nagios.example.com -d ";"`,
+	}
+
+	commander = Commander(ce)
+	monitor(monitorOk, "OK")
+	if ce.got != ce.want {
+		t.Errorf("got '%v', want '%v'", ce.got, ce.want)
+	} else {
+		t.Logf("got '%v', want '%v'", ce.got, ce.want)
+	}
+}
+
+func TestMonitorToHost(t *testing.T) {
+	oldCalls := monitoringCalls
+	oldEvent := monitoringEvent
+	oldCommander := commander
+	oldOpts := opts
+	defer func() {
+		monitoringCalls = oldCalls
+		monitoringEvent = oldEvent
+		commander = oldCommander
+		opts = oldOpts
+	}()
+
+	monitoringCalls = map[monitoringResult]string{
+		monitorOk:       `printf "somehost.example.com;%(event);0;%(message)\n" |/usr/sbin/send_nsca -H "%(send_to)" -d ";"`,
+		monitorWarning:  `printf "somehost.example.com;%(event);1;%(message)\n" |/usr/sbin/send_nsca -H "%(send_to)" -d ";"`,
+		monitorCritical: `printf "somehost.example.com;%(event);2;%(message)\n" |/usr/sbin/send_nsca -H "%(send_to)" -d ";"`,
+		monitorUnknown:  `printf "somehost.example.com;%(event);3;%(message)\n" |/usr/sbin/send_nsca -H "%(send_to)" -d ";"`,
+	}
+
+	opts.SendTo = "somehost.example.net"
+	monitoringEvent = "tests"
+	ce := &mockCommanderExecutor{
+		want: `/bin/sh -c printf "somehost.example.com;tests;0;OK\n" |/usr/sbin/send_nsca -H "` + opts.SendTo + `" -d ";"`,
+	}
+
+	commander = Commander(ce)
+	monitor(monitorOk, "OK")
+	if ce.got != ce.want {
+		t.Errorf("got '%v', want '%v'", ce.got, ce.want)
+	} else {
+		t.Logf("got '%v', want '%v'", ce.got, ce.want)
+	}
+}
 func TestMonitorOk(t *testing.T) {
 	oldCalls := monitoringCalls
 	oldEvent := monitoringEvent
