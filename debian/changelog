@@ -1,3 +1,12 @@
+periodicnoise (1.0) saucy; urgency=low
+
+  [ Ingo Oeser ]
+  * More flexible monitoring sender/receiver
+  * Implement retry logic
+  * change default exit code handling to require POSIX style exit codes
+
+ -- Ingo Oeser <ingo@jimdo.com>  Mon, 10 Feb 2014 12:59:36 +0100
+
 periodicnoise (0.12) saucy; urgency=low
 
   * reworked core logic
