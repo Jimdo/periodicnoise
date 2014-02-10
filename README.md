@@ -94,7 +94,7 @@ documentation
 Instead of writing logging, locking, timeout and load scattering scripts at the 4th company now,
 I decided to build an open source tool for it.
 
-problems to be solved
+problems solved
 ---------------------
  * Scatters the start of it within a random interval, if executed on many machines.
    This ensures central services, we report to, are not overloaded with a spiky load.
@@ -124,7 +124,7 @@ Contributions are welcome. Please open an issue or send me a pull request for a 
 Make sure the git commit hooks show it works.
 
 git commit hooks
------------------------
+----------------
 enable commit hooks via
 
         cd .git ; rm -rf hooks; ln -s ../git-hooks hooks ; cd ..
