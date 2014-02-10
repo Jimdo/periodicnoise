@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"fmt"
 	"io/ioutil"
 	"log"
 	"os"
@@ -106,6 +107,56 @@ func TestCoreLoopRetryDidRetry(t *testing.T) {
 	t.Log(logstream.String())
 	if err != nil {
 		t.Error("want no error, got", err)
+	}
+}
+
+func TestCoreLoopOncePosixExitHandling(t *testing.T) {
+	testone := func(arguments string) (error, monitoringResult) {
+		logbuf := func(t *testing.T, buf *bytes.Buffer) {
+			if buf.Len() > 0 {
+				t.Log(buf.String())
+			}
+		}
+
+		var output bytes.Buffer
+		defer logbuf(t, &output)
+		log.SetOutput(&output)
+		defer log.SetOutput(&bytes.Buffer{})
+
+		oldopts := opts
+		defer func() { opts = oldopts }()
+
+		args, err := flags.ParseArgs(&opts, strings.Fields(arguments))
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		err = validateOptionConstraints()
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		var logstream bytes.Buffer
+		defer logbuf(t, &logstream)
+
+		err = CoreLoopOnce(args, &logstream)
+		code, _ := error2exit(err)
+
+		return err, code
+	}
+
+	for i := 1; i < 256; i++ {
+		err, code := testone(fmt.Sprintf("-- ./testdata/exit_with_code.sh %d", i))
+		if code != monitorCritical {
+			t.Errorf("want CRITICAL monitoring state for exit code %d, got %s due to err = %v", i, code, err)
+		}
+	}
+
+	for i := monitorOk; i <= monitorUnknown; i++ {
+		err, code := testone(fmt.Sprintf("--wrap-nagios-plugin -- ./testdata/exit_with_code.sh %d", i))
+		if code != i {
+			t.Errorf("want %s monitoring state, got %s due to err = %v", i, code, err)
+		}
 	}
 }
 
