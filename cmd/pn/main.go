@@ -1,68 +1,58 @@
 package main
 
 import (
-	"fmt"
 	"log"
 	"os/exec"
 	"path/filepath"
 )
 
-// Ok states that execution went well. Logs debug output and reports ok to
-// monitoring.
-func Ok() {
+var code2prefix = map[monitoringResult]string{
+	monitorOk:       "INFO",
+	monitorWarning:  "WARNING",
+	monitorCritical: "FATAL",
+	monitorUnknown:  "FATAL",
+	monitorDebug:    "DEBUG",
+}
+
+func report(err error) monitoringResult {
 	var message string
-	log.Println("OK")
-	if firstbytes == nil {
-		message = "OK"
-	} else {
-		message = string(firstbytes.Bytes())
+	code := monitorDebug
+
+	switch err.(type) {
+	case nil:
+		code = monitorOk
+		if firstbytes == nil {
+			message = "OK"
+		} else {
+			message = string(firstbytes.Bytes())
+		}
+	case *TimeoutError:
+		code = monitorCritical
+		message = err.Error()
+	case *NotAvailableError:
+		code = monitorUnknown
+		message = err.Error()
+	case *StartupError:
+		code = monitorUnknown
+		message = err.Error()
+	case *LockError:
+		code = monitorCritical
+		message = err.Error()
+	case *exec.ExitError:
+		res, s := error2exit(err)
+		code = res
+		if firstbytes == nil {
+			message = s
+		} else {
+			message = string(firstbytes.Bytes())
+		}
+	default:
+		code = monitorCritical
+		message = err.Error()
 	}
-	monitor(monitorOk, message)
-}
-
-// NotAvailable states that the command could not be started successfully. It
-// might not be installed or has other problems.
-func NotAvailable(err error) {
-	s := fmt.Sprint("Cannot start command: ", err)
-	log.Println("FATAL:", s)
-	monitor(monitorUnknown, s)
-}
-
-// TimedOut states that the command took too long and reports failure to the
-// monitoring.
-func TimedOut(err error) {
-	s := fmt.Sprint(err)
-	log.Println("FATAL:", s)
-	monitor(monitorCritical, s)
-}
-
-// Busy states that the command hangs and reports failure to the monitoring.
-// Those tasks should be automatically killed, if it happens often.
-func Busy() {
-	s := "previous invocation of command still running"
-	log.Println("FATAL:", s)
-	monitor(monitorCritical, s)
-}
-
-// Failed states that the command didn't execute successfully and reports
-// failure to the monitoring. Also Logs error output.
-func Failed(err error) {
-	var message string
-	code, s := error2exit(err)
-	log.Printf("INFO: %s (considered %s for monitoring)\n", s, code)
-	if firstbytes == nil {
-		message = s
-	} else {
-		message = string(firstbytes.Bytes())
-	}
+	log.Printf("%s: %s (considered %s for monitoring)\n", code2prefix[code], message, code)
 	monitor(code, message)
-}
-
-// Locked states that we could not get the lock.
-func Locked(err error) {
-	s := fmt.Sprint("Failed to get lock: ", err)
-	log.Println("FATAL:", s)
-	monitor(monitorCritical, s)
+	return code
 }
 
 var firstbytes *CapWriter
@@ -100,25 +90,5 @@ func main() {
 	loadMonitoringCommands()
 
 	err = CoreLoopRetry(args, logger)
-	if err == nil {
-		// best case
-		Ok()
-	} else {
-		// now handle any errors
-		switch e := err.(type) {
-		case *TimeoutError:
-			TimedOut(e)
-		case *NotAvailableError:
-			NotAvailable(e)
-		case *StartupError:
-			NotAvailable(e)
-		case *exec.ExitError:
-			Failed(e)
-		case *LockError:
-			Locked(e)
-		default:
-			// is unknown error really a fail? Shouldn't happend anyway!
-			Failed(e)
-		}
-	}
+	report(err)
 }
