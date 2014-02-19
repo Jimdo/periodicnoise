@@ -5,14 +5,6 @@ import (
 	"path/filepath"
 )
 
-var code2prefix = map[monitoringResult]string{
-	monitorOk:       "INFO",
-	monitorWarning:  "WARNING",
-	monitorCritical: "FATAL",
-	monitorUnknown:  "FATAL",
-	monitorDebug:    "DEBUG",
-}
-
 var firstbytes *CapWriter
 
 func main() {

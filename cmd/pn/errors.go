@@ -93,3 +93,11 @@ func Report(err error) monitoringResult {
 	monitor(code, message)
 	return code
 }
+
+var code2prefix = map[monitoringResult]string{
+	monitorOk:       "INFO",
+	monitorWarning:  "WARNING",
+	monitorCritical: "FATAL",
+	monitorUnknown:  "FATAL",
+	monitorDebug:    "DEBUG",
+}
