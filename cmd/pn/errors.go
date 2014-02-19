@@ -2,7 +2,9 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"os"
+	"os/exec"
 	"time"
 )
 
@@ -47,4 +49,47 @@ type LockError struct {
 
 func (e *LockError) Error() string {
 	return fmt.Sprintf("cannot get lockfile %s: %s", e.name, e.err)
+}
+
+// Report any error passed to monitoring and logging,
+// returning the monitoring result code for further processing.
+func Report(err error) monitoringResult {
+	var message string
+	code := monitorDebug
+
+	switch err.(type) {
+	case nil:
+		code = monitorOk
+		if firstbytes == nil {
+			message = "OK"
+		} else {
+			message = string(firstbytes.Bytes())
+		}
+	case *TimeoutError:
+		code = monitorCritical
+		message = err.Error()
+	case *NotAvailableError:
+		code = monitorUnknown
+		message = err.Error()
+	case *StartupError:
+		code = monitorUnknown
+		message = err.Error()
+	case *LockError:
+		code = monitorCritical
+		message = err.Error()
+	case *exec.ExitError:
+		res, s := error2exit(err)
+		code = res
+		if firstbytes == nil {
+			message = s
+		} else {
+			message = string(firstbytes.Bytes())
+		}
+	default:
+		code = monitorCritical
+		message = err.Error()
+	}
+	log.Printf("%s: %s (considered %s for monitoring)\n", code2prefix[code], message, code)
+	monitor(code, message)
+	return code
 }
