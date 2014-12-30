@@ -3,4 +3,5 @@ go:
   - 1.1.2
   - 1.2
   - 1.4
-sudo: false
+# cannot use docker containers for building, because we forked the syslog package
+sudo: true
