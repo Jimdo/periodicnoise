@@ -26,7 +26,7 @@ override_dh_auto_configure:
 	go get `go list -f '{{range .Deps}}{{print .}} {{end}}' $(GO_COMMANDS)` $(GO_COMMANDS)
 
 override_dh_auto_test:
-	cd $(GOPATH)/src/$(GO_PACKAGE) && go test ./...
+	cd $(GOPATH)/src/$(GO_PACKAGE) && go test -short ./...
 
 override_dh_install:
 	dh_install --sourcedir=$(GOPATH)/bin pn $(DESTDIR)/usr/bin
