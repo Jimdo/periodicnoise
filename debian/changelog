@@ -1,3 +1,10 @@
+periodicnoise (1.1) unstable; urgency=low
+
+  [ Mathias Lafeldt ]
+  * Allow to build Debian package without a running syslog daemon
+
+ -- Ingo Oeser <ingo@jimdo.com>  Fri, 23 Jan 2015 18:14:37 +0100
+
 periodicnoise (1.0) saucy; urgency=low
 
   [ Ingo Oeser ]
