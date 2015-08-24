@@ -37,7 +37,7 @@ func TestZeroTimeout(t *testing.T) {
 			t.Log("got", err)
 		}
 	} else {
-		t.Errorf("want flag constraint error, got", err)
+		t.Error("want flag constraint error, got", err)
 	}
 
 }
@@ -59,7 +59,7 @@ func TestTooBigMaxDelay(t *testing.T) {
 			t.Log("got", err)
 		}
 	} else {
-		t.Errorf("want flag constraint error, got", err)
+		t.Error("want flag constraint error, got", err)
 	}
 
 }
@@ -93,6 +93,6 @@ func TestDuplicateExitCodes(t *testing.T) {
 			t.Log("got", err)
 		}
 	} else {
-		t.Errorf("want flag constraint error, got", err)
+		t.Error("want flag constraint error, got", err)
 	}
 }
