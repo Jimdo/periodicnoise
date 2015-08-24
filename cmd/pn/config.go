@@ -1,10 +1,11 @@
 package main
 
 import (
-	"code.google.com/p/goconf/conf"
 	"log"
 	"os"
 	"path/filepath"
+
+	"github.com/vaughan0/go-ini"
 )
 
 // Locations of site/global config and per user config.
@@ -14,41 +15,42 @@ var (
 )
 
 // Load config from global and user-specific .ini file(s)
-func loadConfig() *conf.ConfigFile {
-	c := conf.NewConfigFile()
-	global, err := os.Open(GlobalConfig)
+func loadConfig(name string) (ini.File, error) {
+	c, err := ini.LoadFile(name)
 	if err == nil {
-		defer global.Close()
-		if err = c.Read(global); err != nil {
-			log.Fatalln("ERROR: reading global config: ", err)
-			return c
-		}
+		return c, nil
 	}
 
-	home := os.Getenv("HOME")
-	user, err := os.Open(filepath.Join(home, UserConfig))
-	if err == nil {
-		defer user.Close()
-		if err = c.Read(user); err != nil {
-			log.Fatalln("ERROR: reading per user config: ", err)
-			return c
+	// if it doesn't exist, we don't just run with defaults
+	if os.IsNotExist(err) {
+		return make(ini.File), nil
+	}
+	return nil, err
+}
+
+func fillMonitoringCommands(config ini.File) {
+	for result := range monitoringResults {
+		if cmd, ok := config.Get("monitoring", result.String()); ok {
+			monitoringCalls[result] = cmd
 		}
 	}
-
-	return c
 }
 
 // Load monitoring commands from config
 func loadMonitoringCommands() {
-	config := loadConfig()
-
-	for result := range monitoringResults {
-		if cmd, err := config.GetString("monitoring", result.String()); err != nil {
-			if _, ok := err.(conf.GetError); !ok {
-				log.Fatalln("ERROR: reading monitoring commands: ", err)
-			}
-		} else {
-			monitoringCalls[result] = cmd
-		}
+	global, err := loadConfig(GlobalConfig)
+	if err != nil {
+		log.Fatalln("ERROR: reading global config: ", err)
+		return
 	}
+	fillMonitoringCommands(global)
+
+	home := os.Getenv("HOME")
+
+	user, err := loadConfig(filepath.Join(home, UserConfig))
+	if err != nil {
+		log.Fatalf("ERROR: reading per user config: %#v", err)
+		return
+	}
+	fillMonitoringCommands(user)
 }

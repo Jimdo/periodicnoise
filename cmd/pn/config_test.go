@@ -9,7 +9,7 @@ func init() {
 	// Use config test fixture
 	GlobalConfig = "testdata/config.ini"
 	// Make sure user config does not overwrite test data
-	UserConfig = "."
+	UserConfig = ".ini"
 }
 
 func makeMonitoringCommand(result monitoringResult) string {
@@ -17,11 +17,11 @@ func makeMonitoringCommand(result monitoringResult) string {
 }
 
 func TestHasMonitoringCommands(t *testing.T) {
-	config := loadConfig()
-	options, err := config.GetOptions("monitoring")
+	config, err := loadConfig(GlobalConfig)
 	if err != nil {
 		t.Fatal(err)
 	}
+	options := config.Section("monitoring")
 
 	if len(options) != len(monitoringResults) {
 		t.Errorf("got %d, want %d", len(options), len(monitoringResults))
@@ -29,7 +29,7 @@ func TestHasMonitoringCommands(t *testing.T) {
 	}
 
 	for result := range monitoringResults {
-		cmd, _ := config.GetString("monitoring", result.String())
+		cmd, _ := config.Get("monitoring", result.String())
 		want := makeMonitoringCommand(result)
 		if cmd != want {
 			t.Errorf("got %s, want %s", cmd, want)
