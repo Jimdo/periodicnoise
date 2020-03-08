@@ -11,7 +11,7 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/Jimdo/periodicnoise/syslog"
+	"github.com/Jimdo/periodicnoise/cmd/internal/syslog"
 )
 
 // this enables testing

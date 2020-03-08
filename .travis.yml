@@ -1,7 +1,18 @@
 language: go
 go:
-  - 1.2
-  - 1.4
-  - 1.5
+  - 1.11
+  - 1.13
+  - 1.14
+  - tip
+
 # cannot use docker containers for building, because we forked the syslog package
 sudo: true
+#
+# Only test commits to production branch and all pull requests
+branches:
+  only:
+    - master
+
+matrix:
+  allow_failures:
+  - go: tip

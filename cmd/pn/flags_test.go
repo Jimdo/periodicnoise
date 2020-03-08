@@ -12,12 +12,14 @@ func TestDefaulSettingsOk(t *testing.T) {
 	defer func() { opts = oldopts }()
 
 	arguments := "-- true"
-	_, err := flags.ParseArgs(&opts, strings.Fields(arguments))
-	err = validateOptionConstraints()
-	if err != nil {
-		t.Errorf("want no error, got %s", err)
+
+	if _, err := flags.ParseArgs(&opts, strings.Fields(arguments)); err != nil {
+		t.Fatalf("got flag parse error %s", err)
 	}
 
+	if err := validateOptionConstraints(); err != nil {
+		t.Errorf("want no error, got %s", err)
+	}
 }
 
 func TestZeroTimeout(t *testing.T) {
@@ -39,7 +41,6 @@ func TestZeroTimeout(t *testing.T) {
 	} else {
 		t.Error("want flag constraint error, got", err)
 	}
-
 }
 
 func TestTooBigMaxDelay(t *testing.T) {
@@ -61,7 +62,6 @@ func TestTooBigMaxDelay(t *testing.T) {
 	} else {
 		t.Error("want flag constraint error, got", err)
 	}
-
 }
 
 func TestPuppetDetailedExitCodes(t *testing.T) {

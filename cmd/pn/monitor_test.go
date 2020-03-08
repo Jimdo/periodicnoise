@@ -134,21 +134,21 @@ func TestNoMonitoring(t *testing.T) {
 	}
 }
 
-var escapeTest = [...]string{
-	// stuff bash interprets, space
-	"# & ; ` | * ? ~ < > ^ ( ) [ ] { } $ \x0a ' \" %",
-
-	// stuff bash interprets, no space
-	"#&;`|*?~<>^()[]{}$\x0a'\"%",
-
-	// printf codes:
-	"% (used to form %.0#-*+d, or \a \b \f \n \r \t \v \" \062 \062 \x32 \u0032 and \U00000032)",
-
-	// extra case (bash and dash bet to differ here in certain cases)
-	"\\",
-}
-
 func TestShellEscaping(t *testing.T) {
+	escapeTest := [...]string{
+		// stuff bash interprets, space
+		"# & ; ` | * ? ~ < > ^ ( ) [ ] { } $ \x0a ' \" %",
+
+		// stuff bash interprets, no space
+		"#&;`|*?~<>^()[]{}$\x0a'\"%",
+
+		// printf codes:
+		"% (used to form %.0#-*+d, or \a \b \f \n \r \t \v \" \062 \062 \x32 \u0032 and \U00000032)",
+
+		// extra case (bash and dash bet to differ here in certain cases)
+		"\\",
+	}
+
 	oldCalls := monitoringCalls
 	oldEvent := monitoringEvent
 	oldCommander := commander

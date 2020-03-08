@@ -81,16 +81,6 @@ func ProcessGroup(p *os.Process) (grp *os.Process, err error) {
 	return grp, err
 }
 
-// HasNormalExit checks whether command cmd exited gracefully.
-func HasNormalExit(cmd *exec.Cmd) bool {
-	if cmd.ProcessState == nil {
-		return false
-	}
-
-	status := cmd.ProcessState.Sys().(syscall.WaitStatus)
-	return status.Exited()
-}
-
 func processLife(cmd *exec.Cmd, errc chan error) {
 	// FIXME(nightlyone) This works neither in Windows nor Plan9.
 	// Fix it, once we have users of this platform.

@@ -2,12 +2,13 @@ package main
 
 import (
 	"errors"
-	"github.com/nightlyone/lockfile"
 	"os"
 	"path/filepath"
+
+	"github.com/nightlyone/lockfile"
 )
 
-// ErrNeedDirectory means the directory for the lock file actualy not a directory.
+// ErrNeedDirectory means the directory for the lock file actually not a directory.
 var ErrNeedDirectory = errors.New("lockfile directory not a directory")
 
 // ErrNotExclusive means the directory for the lock file is not owned exclusively
@@ -65,9 +66,8 @@ func createLock(killRunning bool) (lockfile.Lockfile, error) {
 			if err := process.Kill(); err != nil {
 				return zero, err
 			}
-			// FIXME(mlafeldt) Remove old lock. Not really safe as
-			// the process might not be killed yet. lockfile.Unlock()
-			// should check if it actually holds the lock.
+			// Remove old lock. Safe as lockfile.Unlock()
+			// checks if it actually holds the lock.
 			if err := lock.Unlock(); err != nil {
 				return zero, err
 			}
