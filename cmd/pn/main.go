@@ -36,14 +36,6 @@ func TimedOut(err error) {
 	monitor(monitorCritical, s)
 }
 
-// Busy states that the command hangs and reports failure to the monitoring.
-// Those tasks should be automatically killed, if it happens often.
-func Busy() {
-	s := "previous invocation of command still running"
-	log.Println("FATAL:", s)
-	monitor(monitorCritical, s)
-}
-
 // Failed states that the command didn't execute successfully and reports
 // failure to the monitoring. Also Logs error output.
 func Failed(err error) {

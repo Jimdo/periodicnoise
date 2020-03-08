@@ -19,8 +19,6 @@ const (
 	monitorCritical
 	monitorUnknown
 	monitorDebug
-	monitorLast  = monitorDebug
-	monitorFirst = monitorOk
 )
 
 // ForEachResultMapping iterate through the set of exit-code <=> monitoring severity mapping,
