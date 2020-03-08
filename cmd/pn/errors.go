@@ -39,7 +39,7 @@ func (e *TimeoutError) Error() string {
 	return fmt.Sprintf("Hard timeout after %s, killed with %s", e.after, os.Kill)
 }
 
-// LockError happens, when the file base lock cannot be aquired
+// LockError happens, when the file base lock cannot be acquired
 type LockError struct {
 	name string
 	err  error

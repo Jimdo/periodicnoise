@@ -43,7 +43,7 @@ func ForEachResultMapping(visitor func(severity monitoringResult, code uint8) bo
 	}
 }
 
-/* return codes besides Sucess and failure are unix specific, so only use there */
+/* return codes besides success and failure are unix specific, so only use there */
 func error2exit(err error) (monitoringResult, string) {
 	if err == nil {
 		return monitorOk, "OK"

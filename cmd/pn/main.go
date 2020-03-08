@@ -117,7 +117,7 @@ func main() {
 		case *LockError:
 			Locked(e)
 		default:
-			// is unknown error really a fail? Shouldn't happend anyway!
+			// is unknown error really a fail? Shouldn't happened anyway!
 			Failed(e)
 		}
 	}

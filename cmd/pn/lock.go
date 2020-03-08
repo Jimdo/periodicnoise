@@ -8,7 +8,7 @@ import (
 	"github.com/nightlyone/lockfile"
 )
 
-// ErrNeedDirectory means the directory for the lock file actualy not a directory.
+// ErrNeedDirectory means the directory for the lock file actually not a directory.
 var ErrNeedDirectory = errors.New("lockfile directory not a directory")
 
 // ErrNotExclusive means the directory for the lock file is not owned exclusively

@@ -39,7 +39,6 @@ func TestZeroTimeout(t *testing.T) {
 	} else {
 		t.Error("want flag constraint error, got", err)
 	}
-
 }
 
 func TestTooBigMaxDelay(t *testing.T) {
@@ -61,7 +60,6 @@ func TestTooBigMaxDelay(t *testing.T) {
 	} else {
 		t.Error("want flag constraint error, got", err)
 	}
-
 }
 
 func TestPuppetDetailedExitCodes(t *testing.T) {
