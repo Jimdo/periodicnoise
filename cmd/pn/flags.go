@@ -15,7 +15,6 @@ var opts struct {
 	WrapNagiosPlugin bool          `short:"n" long:"wrap-nagios-plugin" description:"wrap nagios plugin (pass on return codes, pass first 8KiB of stdout as message)"`
 	NoPipeStderr     bool          `long:"no-stream-stderr" description:"do not stream stderr to log"`
 	NoPipeStdout     bool          `long:"no-stream-stdout" description:"do not stream stdout to log"`
-	MonitoringEvent  string        `short:"E" long:"monitor-event" description:"monitoring event (defaults to check_foo for /path/check_foo.sh)"`
 	KillRunning      bool          `short:"k" long:"kill-running" description:"kill already running instance of command"`
 	NoMonitoring     bool          `long:"no-monitoring" description:"wrap command without sending monitoring events"`
 	GraceTime        time.Duration `long:"grace-time" default:"10s" description:"time left until TIMEOUT, before sending SIGTERM to command, e.g. 45s, 2m, 1h30m"`
@@ -23,6 +22,7 @@ var opts struct {
 	MonitorWarning   []uint8       `long:"monitor-warning" description:"add exit code to warn about"`
 	MonitorCritical  []uint8       `long:"monitor-critical" description:"add exit code to consider as critical failure"`
 	MonitorUnknown   []uint8       `long:"monitor-unknown" description:"add exit code to consider as state not known"`
+	MonitoringEvent  string        `short:"E" long:"monitor-event" description:"monitoring event (defaults to check_foo for /path/check_foo.sh)"`
 	SendAs           string        `long:"send-as" description:"send monitoring events masquerading as this entity"`
 	SendTo           string        `long:"send-to" description:"send monitoring events to this service"`
 }
